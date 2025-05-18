@@ -1,69 +1,64 @@
-# Pathfinding Visualization
+# Pathfinding Visualizer
 
-A simple and interactive visualization tool for popular pathfinding algorithms. This project demonstrates how different algorithms explore a grid to find the shortest path between two points.
+A modern, interactive web application to visualize pathfinding algorithms (A*, Dijkstra, BFS) on a grid.  
+Easily place start/end points, draw walls, generate mazes, and watch how different algorithms find the shortest path!
 
 ## Features
 
-- Visualizes popular pathfinding algorithms:
-  - Dijkstra's Algorithm
-  - A* Search Algorithm
-  - Breadth-First Search (BFS)
-  - Depth-First Search (DFS)
-- Interactive grid: set start/end points and walls
-- Step-by-step or instant visualization
-- Clean and simple UI
+- Visualize **A***, **Dijkstra**, and **Breadth-First Search (BFS)**
+- Click and drag to place walls, start, end, or erase
+- Adjust **grid density** (size)
+- Control animation **speed**
+- Generate random **mazes** (end point is always reachable)
+- Responsive, easy-to-use interface
 
 ## Getting Started
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (if using a JavaScript framework)
-- [npm](https://www.npmjs.com/) or yarn
-
-### Installation
-
-1. Clone the repository:
+1. **Clone or Download this repository:**
     ```sh
-    git clone https://github.com/angon-akash/pathfinding-visualization.git
-    cd pathfinding-visualization
+    git clone https://github.com/your-username/pathfinding-visualizer.git
+    cd pathfinding-visualizer
     ```
+    Or [download as ZIP](https://github.com/your-username/pathfinding-visualizer/archive/refs/heads/main.zip) and extract.
 
-2. Install dependencies:
-    ```sh
-    npm install
-    # or
-    yarn install
-    ```
-
-3. Start the application:
-    ```sh
-    npm start
-    # or
-    yarn start
-    ```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+2. **Open `index.html` in your browser.**
+    - No build step or installation needed!
+    - Works offline.
 
 ## Usage
 
-- Click on the grid to set the **start** and **end** points.
-- Draw walls by clicking and dragging on the grid.
-- Select an algorithm and start the visualization.
-- Watch as the algorithm finds the shortest path!
+- Select a **tool** (wall, start, end, erase) and click/drag on the grid.
+- Click **Maze** to generate a random maze (guaranteed solvable).
+- Change **Algorithm**, **Speed**, or **Grid Density** with the dropdowns.
+- Press **▶** to start, **↻** to reset.
 
-## Screenshots
+## Project Structure
 
-<!-- Add screenshots here if available -->
-<!-- ![Screenshot](screenshots/demo.png) -->
+.
+├── index.html
+├── styles/
+│ └── theme.css
+├── scripts/
+│ ├── main.js
+│ └── algorithms/
+│ ├── astar.js
+│ ├── dijkstra.js
+│ └── bfs.js
 
-## Contributing
+yaml
+Copy
+Edit
 
-Contributions are welcome! Please open an issue or submit a pull request.
+## Customization
+
+- Add more algorithms in `/scripts/algorithms` and register them in `main.js`.
+- Edit `theme.css` for color and layout tweaks.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+MIT License.  
+Feel free to use, modify, or share!
 
 ---
 
-**Author:** [angon-akash](https://github.com/angon-akash)
+Enjoy exploring pathfinding!

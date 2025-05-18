@@ -1,17 +1,23 @@
 import { AStarAlgorithm }   from './algorithms/astar.js';
 import { DijkstraAlgorithm }from './algorithms/dijkstra.js';
 import { BFSAlgorithm }     from './algorithms/bfs.js';
+// Add imports for new algorithms:
+import { DFSAlgorithm }     from './algorithms/dfs.js';
+import { GreedyAlgorithm }  from './algorithms/greedy.js';
+import { RandomWalkAlgorithm } from './algorithms/randomwalk.js';
 
 /* ============================================================
    Config & State
 ============================================================ */
 const cellSize = 28;
 const DENSITIES = {
-  low:    { cols: 22, rows: 14 },
-  medium: { cols: 32, rows: 20 },
-  high:   { cols: 44, rows: 28 },
-  ultra:  { cols: 60, rows: 38 },      // Added
-  extreme:{ cols: 80, rows: 50 }       // Added
+  tiny:    { cols: 12, rows: 8 },
+  small:   { cols: 18, rows: 12 },
+  medium:  { cols: 32, rows: 20 },
+  large:   { cols: 44, rows: 28 },
+  xlarge:  { cols: 60, rows: 38 },
+  extreme: { cols: 80, rows: 50 },
+  insane:  { cols: 120, rows: 80 } // Extremely high density
 };
 
 let gridWidth  = DENSITIES.medium.cols;
@@ -32,10 +38,44 @@ const colors = {
 
 const EMPTY=0,WALL=1,START=2,END=3,VISITED=4,FRONTIER=5,PATH=6;
 
+// Algorithm metadata: fastest to slowest (approximate order)
 const ALGORITHMS = [
-  { id:'astar',    name:'A* (Shortest Path)',   class:AStarAlgorithm },
-  { id:'dijkstra', name:'Dijkstra’s',           class:DijkstraAlgorithm },
-  { id:'bfs',      name:'Breadth‑First Search', class:BFSAlgorithm }
+  {
+    id:'astar',
+    name:'A* (Shortest Path)',
+    class:AStarAlgorithm,
+    desc:'A* uses both path cost and a heuristic to efficiently find the shortest path. Fast and optimal on grids.'
+  },
+  {
+    id:'greedy',
+    name:'Greedy Best‑First',
+    class:GreedyAlgorithm,
+    desc:'Greedy Best-First Search explores nodes closest to the goal, using only the heuristic. Fast but not always optimal.'
+  },
+  {
+    id:'dijkstra',
+    name:'Dijkstra’s',
+    class:DijkstraAlgorithm,
+    desc:'Dijkstra’s algorithm explores all possible paths with the lowest cost first. Guarantees shortest path.'
+  },
+  {
+    id:'bfs',
+    name:'Breadth‑First Search',
+    class:BFSAlgorithm,
+    desc:'BFS explores all neighbors at the current depth before moving deeper. Guarantees shortest path on unweighted grids.'
+  },
+  {
+    id:'dfs',
+    name:'Depth‑First Search',
+    class:DFSAlgorithm,
+    desc:'DFS explores as far as possible along each branch before backtracking. Fast but does not guarantee shortest path.'
+  },
+  {
+    id:'random',
+    name:'Random Walk',
+    class:RandomWalkAlgorithm,
+    desc:'Random Walk moves randomly until it finds the goal or gets stuck. Very slow and not guaranteed to find a path.'
+  }
 ];
 
 const TOOLS = [
@@ -89,11 +129,50 @@ document.addEventListener('DOMContentLoaded',()=>{
   const ctx     = canvas.getContext('2d');
   const startBtn       = document.getElementById('startButton');
   const resetBtn       = document.getElementById('resetButton');
-  const speedSelect    = document.getElementById('speedSelect');
+  const speedSlider    = document.getElementById('speedSlider');
+  const speedValue     = document.getElementById('speedValue');
   const algorithmSelect= document.getElementById('algorithmSelect');
   const densitySelect  = document.getElementById('densitySelect');
   const toolBtnsWrap   = document.getElementById('toolBtns');
   const mazeBtn        = document.getElementById('mazeButton');
+
+  // Move algorithm description/title below the grid, after the legend
+  const gridSection = document.querySelector('.grid-container');
+  const legend = gridSection.querySelector('.legend');
+  let algorithmDescWrap = document.getElementById('algorithmDescWrap');
+  if (algorithmDescWrap) algorithmDescWrap.remove();
+  algorithmDescWrap = document.createElement('div');
+  algorithmDescWrap.id = 'algorithmDescWrap';
+  algorithmDescWrap.style.margin = '1.2rem auto 0.5rem auto';
+  algorithmDescWrap.style.padding = '0.7rem 0 0.5rem 0';
+  algorithmDescWrap.style.textAlign = 'center';
+  algorithmDescWrap.style.minHeight = '2.5em';
+  algorithmDescWrap.style.fontSize = '1.08em';
+  algorithmDescWrap.style.fontWeight = '500';
+  algorithmDescWrap.style.color = 'var(--muted)';
+  algorithmDescWrap.style.width = '100%';
+  algorithmDescWrap.style.boxSizing = 'border-box';
+  algorithmDescWrap.style.background = 'var(--surface)';
+  algorithmDescWrap.style.borderRadius = '0 0 var(--radius) var(--radius)';
+  algorithmDescWrap.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)';
+  algorithmDescWrap.style.borderTop = '1px solid var(--muted)';
+  legend.insertAdjacentElement('afterend', algorithmDescWrap);
+
+  function updateAlgorithmDesc() {
+    const algo = ALGORITHMS.find(a => a.id === algorithmSelect.value);
+    if (algo) {
+      algorithmDescWrap.innerHTML = `
+        <div style="font-size:1.13em;font-weight:600;color:var(--text);margin-bottom:0.15em;">
+          ${algo.name}
+        </div>
+        <div style="font-size:.98em;color:var(--muted);font-weight:400;">
+          ${algo.desc}
+        </div>
+      `;
+    } else {
+      algorithmDescWrap.innerHTML = '';
+    }
+  }
 
   /* ---------- Controls/Buttons UI ---------- */
   algorithmSelect.innerHTML = ALGORITHMS.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
@@ -135,8 +214,36 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
       grid.push(row);
     }
-    placeRandomSimpleWall();
-    grid[startPos.y][startPos.x] = START;
+    function drawGrid(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let y=0;y<gridHeight;y++){
+        for(let x=0;x<gridWidth;x++){
+          const state = grid[y][x];
+          ctx.fillStyle =
+            state===EMPTY   ? colors.empty   :
+            state===WALL    ? colors.wall    :
+            state===START   ? colors.start   :
+            state===END     ? colors.end     :
+            state===VISITED ? colors.visited :
+            state===FRONTIER? colors.frontier: colors.path;
+          ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+    
+          // Add a glow for frontier and path
+          if(state === FRONTIER || state === PATH) {
+            ctx.save();
+            ctx.shadowColor = state === FRONTIER ? colors.frontier : colors.path;
+            ctx.shadowBlur = 12;
+            ctx.strokeStyle = ctx.shadowColor;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x*cellSize+1, y*cellSize+1, cellSize-2, cellSize-2);
+            ctx.restore();
+          }
+    
+          ctx.strokeStyle = colors.gridLine;
+          ctx.strokeRect(x*cellSize, y*cellSize, cellSize, cellSize);
+        }
+      }
+    }    grid[startPos.y][startPos.x] = START;
     if(endPos) grid[endPos.y][endPos.x] = END;
   }
   function placeRandomSimpleWall() {
@@ -182,6 +289,34 @@ document.addEventListener('DOMContentLoaded',()=>{
           state===VISITED ? colors.visited :
           state===FRONTIER? colors.frontier: colors.path;
         ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+
+        // Glow for frontier/path
+        if(state === FRONTIER || state === PATH) {
+          ctx.save();
+          ctx.shadowColor = state === FRONTIER ? colors.frontier : colors.path;
+          ctx.shadowBlur = 12;
+          ctx.strokeStyle = ctx.shadowColor;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x*cellSize+1, y*cellSize+1, cellSize-2, cellSize-2);
+          ctx.restore();
+        }
+
+        // Draw start/end as circles
+        if(state === START || state === END) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(
+            x*cellSize + cellSize/2,
+            y*cellSize + cellSize/2,
+            cellSize*0.35, 0, 2*Math.PI
+          );
+          ctx.fillStyle = state === START ? colors.start : colors.end;
+          ctx.shadowColor = state === START ? colors.start : colors.end;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.restore();
+        }
+
         ctx.strokeStyle = colors.gridLine;
         ctx.strokeRect(x*cellSize, y*cellSize, cellSize, cellSize);
       }
@@ -365,6 +500,26 @@ document.addEventListener('DOMContentLoaded',()=>{
   };
 
   /* ---------- controls ---------- */
+  // Map slider value (0 = slowest, 400 = fastest) to interval ms (higher = faster)
+  function getIntervalFromSlider(val) {
+    // 0 = slowest (400ms), 400 = fastest (0ms/instant)
+    if (val == 400) return 0; // instant
+    // Linear mapping: 0→400ms, 400→0ms
+    return 400 - val;
+  }
+
+  function speedLabel(val) {
+    if (val == 400) return 'Instant';
+    if (val >= 350) return 'Ultra Fast';
+    if (val >= 250) return 'Very Fast';
+    if (val >= 150) return 'Fast';
+    if (val >= 70)  return 'Medium';
+    if (val >= 20)  return 'Slow';
+    return 'Very Slow';
+  }
+
+  speedValue.textContent = speedLabel(+speedSlider.value);
+
   startBtn.addEventListener('click',()=>{
     if(isRunning){
       clearInterval(intervalId); isRunning=false; startBtn.innerHTML='&#9658;';
@@ -377,8 +532,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     startBtn.innerHTML='&#10073;&#10073;';
     resetElapsedTime();
     startElapsedTime();
-    intervalId = setInterval(step, +speedSelect.value);
+    intervalId = setInterval(step, getIntervalFromSlider(+speedSlider.value));
   });
+
   resetBtn.addEventListener('click',()=>{
     clearInterval(intervalId);
     isRunning=false;
@@ -387,10 +543,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     initGrid(); drawGrid();
     resetElapsedTime();
   });
-  speedSelect.addEventListener('change',()=>{
+  speedSlider.addEventListener('input',()=>{
+    speedValue.textContent = speedLabel(+speedSlider.value);
     if(isRunning){
       clearInterval(intervalId);
-      intervalId = setInterval(step, +speedSelect.value);
+      intervalId = setInterval(step, getIntervalFromSlider(+speedSlider.value));
     }
   });
   algorithmSelect.addEventListener('change',()=>{
@@ -398,6 +555,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     grid.forEach(row=> row.forEach((v,i)=>{ if([VISITED,FRONTIER,PATH].includes(v)) row[i]=EMPTY; }));
     drawGrid();
     resetElapsedTime();
+    updateAlgorithmDesc();
   });
   densitySelect.addEventListener('change', () => {
     const d = DENSITIES[densitySelect.value];
@@ -415,11 +573,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   densitySelect.innerHTML = `
-    <option value="low">Low</option>
-    <option value="medium" selected>Medium</option>
-    <option value="high">High</option>
-    <option value="ultra">Ultra</option>
-    <option value="extreme">Extreme</option>
+    <option value="tiny">12 × 8</option>
+    <option value="small">18 × 12</option>
+    <option value="medium" selected>32 × 20</option>
+    <option value="large">44 × 28</option>
+    <option value="xlarge">60 × 38</option>
+    <option value="extreme">80 × 50</option>
+    <option value="insane">120 × 80</option>
   `;
 
   /* ---------- boot ---------- */
@@ -432,6 +592,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   updateCursor();
   resizeCanvas();
   drawGrid();
+
+  // On boot, show description
+  updateAlgorithmDesc();
 
   console.info('%cPathfinding visualizer ready', 'color:#4f8cff');
 });

@@ -17,46 +17,46 @@
   <main>
     <!-- CONTROLS -->
     <section class="section">
-      <div class="controls-bar">
-        <div class="controls-group">
-          <button id="startButton" title="Start / Pause" aria-label="Start algorithm">&#9658;</button>
-          <button id="resetButton" class="danger" title="Reset grid" aria-label="Reset grid">&#8635;</button>
+      <div class="controls-bar redesigned-controls">
+        <!-- Left: Algorithm & Grid -->
+        <div class="controls-row">
+          <div class="controls-group">
+            <label for="algorithmSelect">Algorithm</label>
+            <select id="algorithmSelect"></select>
+          </div>
+          <div class="controls-group">
+            <label for="densitySelect">Grid Size</label>
+            <select id="densitySelect">
+              <option value="tiny">12 × 8</option>
+              <option value="small">18 × 12</option>
+              <option value="medium" selected>32 × 20</option>
+              <option value="large">44 × 28</option>
+              <option value="xlarge">60 × 38</option>
+              <option value="extreme">80 × 50</option>
+              <option value="insane">120 × 80</option>
+            </select>
+          </div>
         </div>
-
-        <div class="controls-group">
-          <label for="algorithmSelect">Algorithm</label>
-          <select id="algorithmSelect"></select>
+        <!-- Center: Tools -->
+        <div class="controls-row tool-btns-row">
+          <div class="controls-group tool-btns" id="toolBtns" aria-label="Grid Tools"></div>
         </div>
-
-        <div class="controls-group">
-          <label for="speedSelect">Speed</label>
-          <select id="speedSelect">
-            <option value="0">Instant</option>
-            <option value="10">Very Fast</option>
-            <option value="50">Fast</option>
-            <option value="100" selected>Medium</option>
-            <option value="200">Slow</option>
-          </select>
-        </div>
-
-        <div class="controls-group">
-          <label for="densitySelect">Grid&nbsp;Density</label>
-          <select id="densitySelect">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
-
-        <div class="controls-group">
-          <button id="mazeButton" title="Generate Maze" aria-label="Generate Maze">Maze</button>
-        </div>
-
-        <div class="controls-group tool-btns" id="toolBtns"></div>
-
-        <div class="controls-group" id="elapsedTimeGroup" style="margin-left:auto;">
-          <span id="elapsedTimeLabel" style="font-weight:600;">Elapsed:</span>
-          <span id="elapsedTime" style="min-width:60px;display:inline-block;">0.00s</span>
+        <!-- Right: Actions & Speed -->
+        <div class="controls-row" style="justify-content:flex-end;">
+          <div class="controls-group">
+            <button id="startButton" title="Start / Pause" aria-label="Start algorithm">&#9658;</button>
+            <button id="resetButton" class="danger" title="Reset grid" aria-label="Reset grid">&#8635;</button>
+            <button id="mazeButton" title="Generate Maze" aria-label="Generate Maze">Maze</button>
+          </div>
+          <div class="controls-group">
+            <label for="speedSlider">Speed</label>
+            <input type="range" id="speedSlider" min="0" max="400" step="1" value="100" style="width:110px;">
+            <span id="speedValue" style="min-width:60px;display:inline-block;">Medium</span>
+          </div>
+          <div class="controls-group" id="elapsedTimeGroup">
+            <label id="elapsedTimeLabel" for="elapsedTime">Elapsed</label>
+            <span id="elapsedTime" style="min-width:54px;display:inline-block;">0.00s</span>
+          </div>
         </div>
       </div>
     </section>

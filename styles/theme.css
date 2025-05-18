@@ -31,6 +31,54 @@ button.danger{background:var(--danger)}button.danger:hover,button.danger:focus{b
 select{background:var(--surface);color:var(--text);border:1px solid var(--muted);
   padding:.5rem 1.2rem}
 
+/* redesigned controls */
+.redesigned-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: stretch;
+  justify-content: space-between;
+  flex-direction: column;
+}
+.controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0.5rem;
+}
+.tool-btns-row {
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+.controls-group {
+  display: flex;
+  gap: .7rem;
+  align-items: center;
+  min-width: 0;
+}
+.controls-group label {
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin-right: .3em;
+  white-space: nowrap;
+}
+@media (min-width: 700px) {
+  .redesigned-controls {
+    flex-direction: row;
+    align-items: center;
+    gap: 2.2rem;
+  }
+  .controls-row {
+    margin-bottom: 0;
+  }
+  .tool-btns-row {
+    margin-bottom: 0;
+  }
+}
+
 /* tool buttons */
 .tool-btns{display:flex;gap:.5rem}
 .tool-btn{border:2px solid var(--surface);border-radius:50%;width:38px;height:38px;
@@ -51,7 +99,22 @@ select{background:var(--surface);color:var(--text);border:1px solid var(--muted)
   display:flex;flex-direction:column;align-items:center}
 canvas#grid{display:block;width:100%;height:auto;background:var(--bg);
   border-radius:var(--radius);box-shadow:var(--shadow);
-  border:1px solid var(--surface);outline:none;cursor: crosshair}
+  border:1px solid var(--muted);outline:none;cursor: crosshair;
+  transition: background 0.2s;
+}
+.grid-container canvas#grid {
+  border: 1px solid var(--muted);
+  transition: none;
+}
+.cell-animate {
+  transition: fill 0.18s, background 0.18s;
+}
+.cell-frontier {
+  box-shadow: 0 0 8px 2px var(--frontier);
+}
+.cell-path {
+  box-shadow: 0 0 8px 2px var(--path);
+}
 
 /* legend */
 .legend{display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:.6rem}

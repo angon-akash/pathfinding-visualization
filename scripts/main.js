@@ -9,7 +9,9 @@ const cellSize = 28;
 const DENSITIES = {
   low:    { cols: 22, rows: 14 },
   medium: { cols: 32, rows: 20 },
-  high:   { cols: 44, rows: 28 }
+  high:   { cols: 44, rows: 28 },
+  ultra:  { cols: 60, rows: 38 },      // Added
+  extreme:{ cols: 80, rows: 50 }       // Added
 };
 
 let gridWidth  = DENSITIES.medium.cols;
@@ -411,6 +413,14 @@ document.addEventListener('DOMContentLoaded',()=>{
     drawGrid();
     resetElapsedTime();
   });
+
+  densitySelect.innerHTML = `
+    <option value="low">Low</option>
+    <option value="medium" selected>Medium</option>
+    <option value="high">High</option>
+    <option value="ultra">Ultra</option>
+    <option value="extreme">Extreme</option>
+  `;
 
   /* ---------- boot ---------- */
   // Grid density

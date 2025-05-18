@@ -1,10 +1,7 @@
 // scripts/algorithms/bfs.js
-import { EventEmitter } from '../utils/eventEmitter.js';
-
 // Unweighted Breadth‑First Search (guarantees shortest path length on grids)
-export class BFSAlgorithm extends EventEmitter {
+export class BFSAlgorithm{
   constructor(grid,startPos,endPos,cellSize,gridWidth,gridHeight){
-    super();
     Object.assign(this,{grid,startPos,endPos,cellSize,gridWidth,gridHeight});
     this.EMPTY=0;this.WALL=1;this.START=2;this.END=3;
     this.VISITED=4;this.FRONTIER=5;this.PATH=6;
@@ -29,11 +26,11 @@ export class BFSAlgorithm extends EventEmitter {
 
     /* reached destination */
     if(current.x===this.endPos.x && current.y===this.endPos.y){
-      rebuild(this.came,current,this);
+      rebuild(this.came,current,this.grid,{START:this.START,PATH:this.PATH});
       return {status:'found'};
     }
 
-    this.emit('visit', current);
+    paint(this.grid,current,this.VISITED,this.START,this.END);
 
     for(const n of neighbors(current,this)){
       const nk=key(n);
@@ -41,7 +38,7 @@ export class BFSAlgorithm extends EventEmitter {
       this.vis.add(nk);
       this.came[nk]=current;
       this.queue.push(n);
-      this.emit('frontier', n);
+      paint(this.grid,n,this.FRONTIER,this.START,this.END);
     }
     return {status:'running'};
   }
@@ -55,9 +52,12 @@ function neighbors({x,y},ctx){
                         ctx.grid[p.y][p.x]!==ctx.WALL);
 }
 const key=p=>`${p.x},${p.y}`;
-function rebuild(came,current,algo){
+function paint(grid,{x,y},state,start,end){
+  if(![start,end].includes(grid[y][x])) grid[y][x]=state;
+}
+function rebuild(came,current,grid,{START,PATH}){
   while(came[key(current)]){
     current=came[key(current)];
-    algo.emit('path', current);
+    if(grid[current.y][current.x]!==START) grid[current.y][current.x]=PATH;
   }
 }

@@ -345,21 +345,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   /* ---------- algorithm harness ---------- */
   function spawnAlgorithm(){
-    const {class: Algo} = ALGORITHMS.find(a=>a.id===algorithmSelect.value);
-    const algo = new Algo(grid, startPos, endPos, cellSize, gridWidth, gridHeight);
-
-    // subscribe to events and update grid state
-    algo.on('visit', ({x,y}) => {
-      if (![EMPTY, START, END].includes(grid[y][x])) grid[y][x] = VISITED;
-    });
-    algo.on('frontier', ({x,y}) => {
-      if (![EMPTY, START, END].includes(grid[y][x])) grid[y][x] = FRONTIER;
-    });
-    algo.on('path', ({x,y}) => {
-      if (grid[y][x] !== START) grid[y][x] = PATH;
-    });
-
-    return algo;
+    const {class:Algo} = ALGORITHMS.find(a=>a.id===algorithmSelect.value);
+    return new Algo(grid, startPos, endPos, cellSize, gridWidth, gridHeight);
   }
   const step = ()=>{
     const {status} = currentAlgorithm.step();

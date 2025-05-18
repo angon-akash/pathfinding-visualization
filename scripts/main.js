@@ -608,11 +608,16 @@ document.addEventListener('DOMContentLoaded',()=>{
       intervalId = setInterval(step, getIntervalFromSlider(+speedSlider.value));
     }
   });
-  algorithmSelect.addEventListener('change',()=>{
-    clearInterval(intervalId); isRunning=false; startBtn.innerHTML='&#9658;';
-    grid.forEach(row=> row.forEach((v,i)=>{ if([VISITED,FRONTIER,PATH].includes(v)) row[i]=EMPTY; }));
+  algorithmSelect.addEventListener('change', () => {
+    clearInterval(intervalId);
+    isRunning = false;
+    startBtn.innerHTML = '&#9658;';
+    grid.forEach(row => row.forEach((v, i) => {
+      if ([VISITED, FRONTIER, PATH].includes(v)) row[i] = EMPTY;
+    }));
     drawGrid();
     resetElapsedTime();
+    resetStats(); // Reset node and path counters
     updateAlgorithmDesc();
   });
   densitySelect.addEventListener('change', () => {

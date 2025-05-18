@@ -5,6 +5,8 @@ import { BFSAlgorithm }     from './algorithms/bfs.js';
 import { DFSAlgorithm }     from './algorithms/dfs.js';
 import { GreedyAlgorithm }  from './algorithms/greedy.js';
 import { RandomWalkAlgorithm } from './algorithms/randomwalk.js';
+// Add new import:
+import { BidirectionalBFSAlgorithm } from './algorithms/bidirectionalbfs.js';
 
 /* ============================================================
    Config & State
@@ -63,6 +65,12 @@ const ALGORITHMS = [
     name:'Breadth‑First Search',
     class:BFSAlgorithm,
     desc:'BFS explores all neighbors at the current depth before moving deeper. Guarantees shortest path on unweighted grids.'
+  },
+  {
+    id:'bidirectionalbfs',
+    name:'Bidirectional BFS',
+    class:BidirectionalBFSAlgorithm,
+    desc:'Bidirectional BFS runs two simultaneous searches from start and end, meeting in the middle. Very fast for large open grids.'
   },
   {
     id:'dfs',
@@ -136,6 +144,20 @@ document.addEventListener('DOMContentLoaded',()=>{
   const toolBtnsWrap   = document.getElementById('toolBtns');
   const mazeBtn        = document.getElementById('mazeButton');
 
+  // --- Maze Type Dropdown ---
+  let mazeTypeSelect = document.getElementById('mazeTypeSelect');
+  if (!mazeTypeSelect) {
+    mazeTypeSelect = document.createElement('select');
+    mazeTypeSelect.id = 'mazeTypeSelect';
+    mazeTypeSelect.style.marginLeft = '0.7em';
+    mazeTypeSelect.title = 'Maze Complexity';
+    mazeTypeSelect.innerHTML = `
+      <option value="simple">Simple Maze</option>
+      <option value="complex">Complex Maze</option>
+    `;
+    mazeBtn.parentElement.insertBefore(mazeTypeSelect, mazeBtn.nextSibling);
+  }
+
   // Move algorithm description/title below the grid, after the legend
   const gridSection = document.querySelector('.grid-container');
   const legend = gridSection.querySelector('.legend');
@@ -172,6 +194,34 @@ document.addEventListener('DOMContentLoaded',()=>{
     } else {
       algorithmDescWrap.innerHTML = '';
     }
+  }
+
+  // --- Maze Generation Functions ---
+  function generateSimpleMaze() {
+    // Clear grid, then add a few random walls (not blocking start/end)
+    for (let y = 0; y < gridHeight; y++)
+      for (let x = 0; x < gridWidth; x++)
+        if (grid[y][x] !== START && grid[y][x] !== END) grid[y][x] = EMPTY;
+    // Place several random walls
+    const wallCount = Math.floor((gridWidth * gridHeight) / 7);
+    let placed = 0, tries = 0;
+    while (placed < wallCount && tries++ < wallCount * 4) {
+      const x = Math.floor(Math.random() * gridWidth);
+      const y = Math.floor(Math.random() * gridHeight);
+      if (
+        grid[y][x] === EMPTY &&
+        !(x === startPos.x && y === startPos.y) &&
+        !(endPos && x === endPos.x && y === endPos.y)
+      ) {
+        grid[y][x] = WALL;
+        placed++;
+      }
+    }
+  }
+
+  function generateComplexMaze() {
+    // Use the existing recursive backtracker maze with loops
+    generateMaze();
   }
 
   /* ---------- Controls/Buttons UI ---------- */
@@ -219,6 +269,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       for(let y=0;y<gridHeight;y++){
         for(let x=0;x<gridWidth;x++){
           const state = grid[y][x];
+          ctx.globalAlpha = state === FRONTIER ? 0.7 : 1;
           ctx.fillStyle =
             state===EMPTY   ? colors.empty   :
             state===WALL    ? colors.wall    :
@@ -227,6 +278,7 @@ document.addEventListener('DOMContentLoaded',()=>{
             state===VISITED ? colors.visited :
             state===FRONTIER? colors.frontier: colors.path;
           ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+          ctx.globalAlpha = 1;
     
           // Add a glow for frontier and path
           if(state === FRONTIER || state === PATH) {
@@ -281,6 +333,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     for(let y=0;y<gridHeight;y++){
       for(let x=0;x<gridWidth;x++){
         const state = grid[y][x];
+        ctx.globalAlpha = state === FRONTIER ? 0.7 : 1;
         ctx.fillStyle =
           state===EMPTY   ? colors.empty   :
           state===WALL    ? colors.wall    :
@@ -289,6 +342,7 @@ document.addEventListener('DOMContentLoaded',()=>{
           state===VISITED ? colors.visited :
           state===FRONTIER? colors.frontier: colors.path;
         ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+        ctx.globalAlpha = 1;
 
         // Glow for frontier/path
         if(state === FRONTIER || state === PATH) {
@@ -500,22 +554,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   };
 
   /* ---------- controls ---------- */
-  // Map slider value (0 = slowest, 400 = fastest) to interval ms (higher = faster)
+  // Map slider value (1 = slowest, 10 = fastest) to interval ms
   function getIntervalFromSlider(val) {
-    // 0 = slowest (400ms), 400 = fastest (0ms/instant)
-    if (val == 400) return 0; // instant
-    // Linear mapping: 0→400ms, 400→0ms
-    return 400 - val;
+    // 1 = slowest (400ms), 10 = fastest (0ms/instant)
+    if (val == 10) return 0; // instant
+    // Linear mapping: 1→400ms, 10→0ms
+    return Math.round(400 * (1 - (val-1)/9));
   }
 
   function speedLabel(val) {
-    if (val == 400) return 'Instant';
-    if (val >= 350) return 'Ultra Fast';
-    if (val >= 250) return 'Very Fast';
-    if (val >= 150) return 'Fast';
-    if (val >= 70)  return 'Medium';
-    if (val >= 20)  return 'Slow';
-    return 'Very Slow';
+    return String(val);
   }
 
   speedValue.textContent = speedLabel(+speedSlider.value);
@@ -567,7 +615,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   mazeBtn.addEventListener('click', () => {
     clearInterval(intervalId);
     isRunning = false;
-    generateMaze();
+    if (mazeTypeSelect.value === 'simple') {
+      generateSimpleMaze();
+    } else {
+      generateComplexMaze();
+    }
     drawGrid();
     resetElapsedTime();
   });

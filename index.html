@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Pathfinding Visualizer</title>
+  <link rel="stylesheet" href="styles/theme.css" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+  <header>
+    <h1>Pathfinding Visualizer</h1>
+  </header>
+
+  <main>
+    <!-- CONTROLS -->
+    <section class="section">
+      <div class="controls-bar">
+        <div class="controls-group">
+          <button id="startButton" title="Start / Pause" aria-label="Start algorithm">&#9658;</button>
+          <button id="resetButton" class="danger" title="Reset grid" aria-label="Reset grid">&#8635;</button>
+        </div>
+
+        <div class="controls-group">
+          <label for="algorithmSelect">Algorithm</label>
+          <select id="algorithmSelect"></select>
+        </div>
+
+        <div class="controls-group">
+          <label for="speedSelect">Speed</label>
+          <select id="speedSelect">
+            <option value="0">Instant</option>
+            <option value="10">Very Fast</option>
+            <option value="50">Fast</option>
+            <option value="100" selected>Medium</option>
+            <option value="200">Slow</option>
+          </select>
+        </div>
+
+        <div class="controls-group">
+          <label for="densitySelect">Grid&nbsp;Density</label>
+          <select id="densitySelect">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+
+        <div class="controls-group">
+          <button id="mazeButton" title="Generate Maze" aria-label="Generate Maze">Maze</button>
+        </div>
+
+        <div class="controls-group tool-btns" id="toolBtns"></div>
+
+        <div class="controls-group" id="elapsedTimeGroup" style="margin-left:auto;">
+          <span id="elapsedTimeLabel" style="font-weight:600;">Elapsed:</span>
+          <span id="elapsedTime" style="min-width:60px;display:inline-block;">0.00s</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRID -->
+    <section class="section grid-container">
+      <canvas id="grid" width="616" height="392" tabindex="0" aria-label="Interactive pathfinding grid"></canvas>
+      <div class="legend" aria-hidden="true">
+        <div class="legend-item"><span class="legend-swatch swatch-start"></span>Start</div>
+        <div class="legend-item"><span class="legend-swatch swatch-end"></span>End</div>
+        <div class="legend-item"><span class="legend-swatch swatch-wall"></span>Wall</div>
+        <div class="legend-item"><span class="legend-swatch swatch-visited"></span>Visited</div>
+        <div class="legend-item"><span class="legend-swatch swatch-frontier"></span>Frontier</div>
+        <div class="legend-item"><span class="legend-swatch swatch-path"></span>Path</div>
+      </div>
+    </section>
+
+    <!-- HOW-TO -->
+    <section class="section">
+      <h2>How to use</h2>
+      <ul>
+        <li>Select a tool (wall, start, end, erase) then click / drag on the grid.</li>
+        <li>Change <strong>Grid Density</strong> any time to reset and get a bigger / smaller canvas.</li>
+        <li>Press <kbd>▶</kbd> to run, <kbd>↻</kbd> to reset.</li>
+      </ul>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section">
+      <h2>About the algorithms</h2>
+      <p>
+        <strong>Dijkstra’s</strong> explores every shortest path cost from the start.<br />
+        <strong>A*</strong> adds a heuristic, making it dramatically faster in most cases.<br />
+        <strong>BFS</strong> is unweighted and guarantees shortest path on grids.<br />
+        The architecture is modular – drop additional algorithms into
+        <code>/scripts/algorithms</code> and register them in <code>main.js</code>.
+      </p>
+    </section>
+  </main>
+  <script type="module" src="scripts/main.js"></script>
+</body>
+</html>
+

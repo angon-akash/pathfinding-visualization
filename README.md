@@ -32,23 +32,6 @@ Easily place start/end points, draw walls, generate mazes, and watch how differe
 - Change **Algorithm**, **Speed**, or **Grid Density** with the dropdowns.
 - Press **▶** to start, **↻** to reset.
 
-## Project Structure
-
-.
-├── index.html
-├── styles/
-│ └── theme.css
-├── scripts/
-│ ├── main.js
-│ └── algorithms/
-│ ├── astar.js
-│ ├── dijkstra.js
-│ └── bfs.js
-
-yaml
-Copy
-Edit
-
 ## Customization
 
 - Add more algorithms in `/scripts/algorithms` and register them in `main.js`.

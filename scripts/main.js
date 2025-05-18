@@ -577,30 +577,35 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   speedValue.textContent = speedLabel(+speedSlider.value);
 
-  startBtn.addEventListener('click',()=>{
-    if(isRunning){
-      clearInterval(intervalId); isRunning=false; startBtn.innerHTML='&#9658;';
+  startBtn.addEventListener('click', () => {
+    if (isRunning) {
+      clearInterval(intervalId);
+      isRunning = false;
+      startBtn.innerHTML = '&#9658;';
       stopElapsedTime();
       return;
     }
     currentAlgorithm = spawnAlgorithm();
     currentAlgorithm.init();
-    isRunning=true;
-    startBtn.innerHTML='&#10073;&#10073;';
+    isRunning = true;
+    startBtn.innerHTML = '&#10073;&#10073;';
     resetElapsedTime();
+    resetStats(); // Reset counters when starting the algorithm
     startElapsedTime();
     intervalId = setInterval(step, getIntervalFromSlider(+speedSlider.value));
   });
 
-  resetBtn.addEventListener('click',()=>{
+  resetBtn.addEventListener('click', () => {
     clearInterval(intervalId);
-    isRunning=false;
-    startBtn.innerHTML='&#9658;';
+    isRunning = false;
+    startBtn.innerHTML = '&#9658;';
     setDefaultPositions();
-    initGrid(); drawGrid();
+    initGrid();
+    drawGrid();
     resetElapsedTime();
-    resetStats();
+    resetStats(); // Reset counters when restarting
   });
+
   speedSlider.addEventListener('input',()=>{
     speedValue.textContent = speedLabel(+speedSlider.value);
     if(isRunning){

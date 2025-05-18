@@ -1,2 +1,69 @@
-# pathfinding-visualization
-This project is an interactive visualization of the A* pathfinding algorithm implemented using Pygame. It allows users to create a custom grid environment with walls and obstacles, set starting and ending positions, and observe how the A* algorithm efficiently finds the shortest path between these points.
+# Pathfinding Visualization
+
+A simple and interactive visualization tool for popular pathfinding algorithms. This project demonstrates how different algorithms explore a grid to find the shortest path between two points.
+
+## Features
+
+- Visualizes popular pathfinding algorithms:
+  - Dijkstra's Algorithm
+  - A* Search Algorithm
+  - Breadth-First Search (BFS)
+  - Depth-First Search (DFS)
+- Interactive grid: set start/end points and walls
+- Step-by-step or instant visualization
+- Clean and simple UI
+
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (if using a JavaScript framework)
+- [npm](https://www.npmjs.com/) or yarn
+
+### Installation
+
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/angon-akash/pathfinding-visualization.git
+    cd pathfinding-visualization
+    ```
+
+2. Install dependencies:
+    ```sh
+    npm install
+    # or
+    yarn install
+    ```
+
+3. Start the application:
+    ```sh
+    npm start
+    # or
+    yarn start
+    ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Usage
+
+- Click on the grid to set the **start** and **end** points.
+- Draw walls by clicking and dragging on the grid.
+- Select an algorithm and start the visualization.
+- Watch as the algorithm finds the shortest path!
+
+## Screenshots
+
+<!-- Add screenshots here if available -->
+<!-- ![Screenshot](screenshots/demo.png) -->
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+**Author:** [angon-akash](https://github.com/angon-akash)

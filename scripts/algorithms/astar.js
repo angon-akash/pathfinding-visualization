@@ -42,6 +42,7 @@ export class AStarAlgorithm{
 
     this.closed.add(key(current));
     paint(this.grid,current,this.VISITED,this.START,this.END);
+    let nodesVisited = 1;
 
     for(const n of neighbors(current,this)){
       if(this.closed.has(key(n))) continue;
@@ -57,7 +58,7 @@ export class AStarAlgorithm{
         }
       }
     }
-    return {status:'running'};
+    return {status:'running', nodesVisited};
   }
 }
 

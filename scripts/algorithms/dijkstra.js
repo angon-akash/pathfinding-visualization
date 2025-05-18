@@ -35,6 +35,7 @@ export class DijkstraAlgorithm{
     }
 
     paint(this.grid,current,this.VISITED,this.START,this.END);
+    let nodesVisited = 1;
 
     for(const n of neighbors(current,this)){
       const nk=k(n);
@@ -49,7 +50,7 @@ export class DijkstraAlgorithm{
         }
       }
     }
-    return {status:'running'};
+    return {status:'running', nodesVisited};
   }
 }
 

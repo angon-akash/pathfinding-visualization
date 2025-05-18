@@ -27,6 +27,7 @@ export class RandomWalkAlgorithm {
       return {status:'found'};
     }
     this.grid[this.current.y][this.current.x]=this.VISITED;
+    let nodesVisited = 1;
     // Get all valid neighbors
     const dirs = [{x:0,y:1},{x:1,y:0},{x:0,y:-1},{x:-1,y:0}];
     const neighbors = dirs.map(d=>({x:this.current.x+d.x,y:this.current.y+d.y}))
@@ -41,6 +42,6 @@ export class RandomWalkAlgorithm {
     this.vis.add(`${next.x},${next.y}`);
     this.grid[next.y][next.x]=this.FRONTIER;
     this.current = next;
-    return {status:'running'};
+    return {status:'running', nodesVisited};
   }
 }

@@ -109,6 +109,20 @@ let isRunning=false, intervalId=null, currentAlgorithm=null, currentTool='wall';
 let elapsedStart = null;
 let elapsedTimer = null;
 
+// Add stats variables and helpers near the top (after let elapsedTimer = null;)
+let nodesExplored = 0;
+let pathLength = 0;
+
+function updateStatsDisplay() {
+  document.getElementById('nodesExplored').textContent = `Nodes explored: ${nodesExplored}`;
+  document.getElementById('pathLength').textContent = `Path length: ${pathLength}`;
+}
+function resetStats() {
+  nodesExplored = 0;
+  pathLength = 0;
+  updateStatsDisplay();
+}
+
 function resetElapsedTime() {
   elapsedStart = null;
   document.getElementById('elapsedTime').textContent = '0.00s';
@@ -372,26 +386,46 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   const inBounds = ({x,y}) => x>=0 && x<gridWidth && y>=0 && y<gridHeight;
-  function editCell({x,y}){
-    switch(currentTool){
+  function editCell({x, y}) {
+    // Always keep start and end on the grid
+    if ((x === startPos.x && y === startPos.y) || (endPos && x === endPos.x && y === endPos.y)) {
+      // Only allow moving start/end if using the corresponding tool
+      if (currentTool === 'start' && !(x === endPos?.x && y === endPos?.y)) {
+        grid[startPos.y][startPos.x] = EMPTY;
+        startPos = {x, y};
+        grid[y][x] = START;
+      } else if (currentTool === 'end' && !(x === startPos.x && y === startPos.y)) {
+        if (endPos) grid[endPos.y][endPos.x] = EMPTY;
+        endPos = {x, y};
+        grid[y][x] = END;
+      }
+      // Do not allow erase or wall tool to affect start/end
+      return;
+    }
+
+    switch (currentTool) {
       case 'wall':
-        if(grid[y][x] !== START) grid[y][x] = WALL;
-        if(grid[y][x] === WALL && endPos && x === endPos.x && y === endPos.y) endPos = null;
+        // Don't overwrite start or end
+        if (grid[y][x] !== START && grid[y][x] !== END) grid[y][x] = WALL;
         break;
       case 'erase':
-        if(grid[y][x] === END) { grid[y][x] = EMPTY; endPos = null; }
-        else if(grid[y][x] !== START) grid[y][x] = EMPTY;
+        // Don't erase start or end
+        if (grid[y][x] !== START && grid[y][x] !== END) grid[y][x] = EMPTY;
         break;
       case 'start':
-        if(grid[y][x] !== END && grid[y][x] !== WALL){
-          grid[startPos.y][startPos.x]=EMPTY;
-          startPos={x,y}; grid[y][x]=START;
+        // Only move start if not on end or wall
+        if (grid[y][x] !== END && grid[y][x] !== WALL) {
+          grid[startPos.y][startPos.x] = EMPTY;
+          startPos = {x, y};
+          grid[y][x] = START;
         }
         break;
       case 'end':
-        if(grid[y][x] !== START && grid[y][x] !== WALL){
-          if(endPos) grid[endPos.y][endPos.x]=EMPTY;
-          endPos={x,y}; grid[y][x]=END;
+        // Only move end if not on start or wall
+        if (grid[y][x] !== START && grid[y][x] !== WALL) {
+          if (endPos) grid[endPos.y][endPos.x] = EMPTY;
+          endPos = {x, y};
+          grid[y][x] = END;
         }
         break;
     }
@@ -512,7 +546,13 @@ document.addEventListener('DOMContentLoaded',()=>{
     return new Algo(grid, startPos, endPos, cellSize, gridWidth, gridHeight);
   }
   const step = ()=>{
-    const {status} = currentAlgorithm.step();
+    const {status, nodesVisited} = currentAlgorithm.step();
+    nodesExplored += (nodesVisited || 0);
+    if(status==='found'){
+      // Count PATH cells (excluding start/end)
+      pathLength = grid.flat().filter(v=>v===PATH).length;
+    }
+    updateStatsDisplay();
     if(status==='found' || status==='no-path'){
       clearInterval(intervalId);
       isRunning=false;
@@ -559,6 +599,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     setDefaultPositions();
     initGrid(); drawGrid();
     resetElapsedTime();
+    resetStats();
   });
   speedSlider.addEventListener('input',()=>{
     speedValue.textContent = speedLabel(+speedSlider.value);
@@ -580,6 +621,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     setDefaultPositions();
     initGrid(); resizeCanvas();
     resetElapsedTime();
+    resetStats();
   });
   mazeBtn.addEventListener('click', () => {
     clearInterval(intervalId);
@@ -591,6 +633,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
     drawGrid();
     resetElapsedTime();
+    resetStats();
   });
 
   densitySelect.innerHTML = `
@@ -613,6 +656,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   updateCursor();
   resizeCanvas();
   drawGrid();
+  resetStats();
 
   // On boot, show description
   updateAlgorithmDesc();

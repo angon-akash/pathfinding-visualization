@@ -32,6 +32,7 @@ export class GreedyAlgorithm {
       return {status:'found'};
     }
     this.grid[current.y][current.x]=this.VISITED;
+    let nodesVisited = 1;
     for(const d of [{x:0,y:1},{x:1,y:0},{x:0,y:-1},{x:-1,y:0}]){
       const n={x:current.x+d.x,y:current.y+d.y};
       const k=`${n.x},${n.y}`;
@@ -43,7 +44,7 @@ export class GreedyAlgorithm {
         this.grid[n.y][n.x]=this.FRONTIER;
       }
     }
-    return {status:'running'};
+    return {status:'running', nodesVisited};
   }
 }
 function heuristic(a,b){ return Math.abs(a.x-b.x)+Math.abs(a.y-b.y); }

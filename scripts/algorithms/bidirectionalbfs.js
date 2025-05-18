@@ -20,11 +20,14 @@ export class BidirectionalBFSAlgorithm {
   }
   step() {
     if (!this.queueA.length || !this.queueB.length) return {status:'no-path'};
+    let nodesVisited = 0;
     // Expand from start
-    if (this.expand(this.queueA, this.visA, this.visB, this.cameA, true)) return {status:'found'};
+    if (this.expand(this.queueA, this.visA, this.visB, this.cameA, true)) return {status:'found', nodesVisited: 1};
+    nodesVisited++;
     // Expand from end
-    if (this.expand(this.queueB, this.visB, this.visA, this.cameB, false)) return {status:'found'};
-    return {status:'running'};
+    if (this.expand(this.queueB, this.visB, this.visA, this.cameB, false)) return {status:'found', nodesVisited: nodesVisited+1};
+    nodesVisited++;
+    return {status:'running', nodesVisited};
   }
   expand(queue, visThis, visOther, came, fromStart) {
     const current = queue.shift();

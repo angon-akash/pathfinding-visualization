@@ -1,6 +1,9 @@
+import { EventEmitter } from '../utils/eventEmitter.js';
+
 // scripts/algorithms/dijkstra.js
-export class DijkstraAlgorithm{
+export class DijkstraAlgorithm extends EventEmitter {
   constructor(grid,startPos,endPos,cellSize,gridWidth,gridHeight){
+    super();
     Object.assign(this,{grid,startPos,endPos,cellSize,gridWidth,gridHeight});
     this.EMPTY=0;this.WALL=1;this.START=2;this.END=3;
     this.VISITED=4;this.FRONTIER=5;this.PATH=6;
@@ -21,7 +24,6 @@ export class DijkstraAlgorithm{
   step(){
     if(!this.queue.length) return {status:'no-path'};
 
-    /* extract min-distance node */
     this.queue.sort((a,b)=> (this.dist[k(a)]??Infinity)-(this.dist[k(b)]??Infinity));
     const current=this.queue.shift();
     const currentKey=k(current);
@@ -29,12 +31,11 @@ export class DijkstraAlgorithm{
     this.closed.add(currentKey);
 
     if(current.x===this.endPos.x && current.y===this.endPos.y){
-      rebuild(this.came,current,this.grid,
-              {START:this.START,PATH:this.PATH});
+      rebuild(this.came,current,this);
       return {status:'found'};
     }
 
-    paint(this.grid,current,this.VISITED,this.START,this.END);
+    this.emit('visit', current);
 
     for(const n of neighbors(current,this)){
       const nk=k(n);
@@ -45,7 +46,7 @@ export class DijkstraAlgorithm{
         this.came[nk]=current;
         if(!this.queue.some(p=>p.x===n.x&&p.y===n.y)){
           this.queue.push(n);
-          paint(this.grid,n,this.FRONTIER,this.START,this.END);
+          this.emit('frontier', n);
         }
       }
     }
@@ -53,7 +54,6 @@ export class DijkstraAlgorithm{
   }
 }
 
-/* helpers (shared with A*) */
 const dirs=[{x:0,y:1},{x:1,y:0},{x:0,y:-1},{x:-1,y:0}];
 function neighbors({x,y},ctx){
   return dirs.map(d=>({x:x+d.x,y:y+d.y}))
@@ -61,12 +61,9 @@ function neighbors({x,y},ctx){
                         ctx.grid[p.y][p.x]!==ctx.WALL);
 }
 const k=p=>`${p.x},${p.y}`;
-function paint(grid,{x,y},state,start,end){
-  if(![start,end].includes(grid[y][x])) grid[y][x]=state;
-}
-function rebuild(came,current,grid,{START,PATH}){
+function rebuild(came,current,algo){
   while(came[k(current)]){
     current=came[k(current)];
-    if(grid[current.y][current.x]!==START) grid[current.y][current.x]=PATH;
+    algo.emit('path', current);
   }
 }

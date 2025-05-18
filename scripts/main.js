@@ -196,18 +196,21 @@ document.addEventListener('DOMContentLoaded',()=>{
   window.addEventListener('resize',resizeCanvas);
 
   /* ---------- pointer helpers ---------- */
-  // ======= EDITED FUNCTION FOR ACCURATE DRAWING (Cursor and Wall Alignment Fix) =======
+  /**
+   * Map a MouseEvent or TouchEvent to a grid cell index,
+   * regardless of CSS scaling or transform.
+   */
   function pointerToCell(e) {
     const rect = canvas.getBoundingClientRect();
-    // Corrected mapping: use clientX/clientY and scale to canvas coordinates
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-    return {
-      x: Math.floor(x / cellSize),
-      y: Math.floor(y / cellSize)
-    };
+    // distance from canvas’s top-left in CSS pixels
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    // compute which cell that lands in
+    const cellX = Math.floor((offsetX * gridWidth)  / rect.width);
+    const cellY = Math.floor((offsetY * gridHeight) / rect.height);
+    return { x: cellX, y: cellY };
   }
-  // ======= END EDIT =======
+
   const inBounds = ({x,y}) => x>=0 && x<gridWidth && y>=0 && y<gridHeight;
   function editCell({x,y}){
     switch(currentTool){

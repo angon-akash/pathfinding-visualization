@@ -21,7 +21,7 @@ main{max-width:880px;margin:auto;padding:1.5rem 1rem 2.5rem;display:flex;
 
 /* controls */
 .controls-bar{display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;
-  justify-content:space-between}
+  justify-content:space-between; width: 100%; box-sizing: border-box; margin-bottom: 2.2rem;}
 .controls-group{display:flex;gap:.7rem;align-items:center}
 button,select{font-size:1rem;border-radius:var(--radius);border:0;outline:0;
   padding:.5rem 1.1rem;background:var(--accent);color:#fff;cursor:pointer;
@@ -79,6 +79,28 @@ select{background:var(--surface);color:var(--text);border:1px solid var(--muted)
   }
 }
 
+/* Stack controls vertically on small screens, horizontally on wide */
+.controls-stack {
+  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 1.2rem;
+  width: 100%;
+  justify-content: space-between;
+}
+@media (max-width: 700px) {
+  .controls-stack {
+    flex-direction: column;
+    gap: 0.7rem;
+    align-items: stretch;
+  }
+  .controls-bar {
+    margin-bottom: 1.2rem;
+  }
+  #grid {
+    margin-bottom: 1.2rem !important;
+  }
+}
+
 /* tool buttons */
 .tool-btns{display:flex;gap:.5rem}
 .tool-btn{border:2px solid var(--surface);border-radius:50%;width:38px;height:38px;
@@ -93,6 +115,25 @@ select{background:var(--surface);color:var(--text);border:1px solid var(--muted)
 .tool-btn[data-tool="start"]{background:var(--success)}
 .tool-btn[data-tool="end"]{background:var(--danger)}
 .tool-btn[data-tool="erase"]{background:var(--surface)}
+
+/* Erase tool button: white with E */
+.tool-btn[data-tool="erase"] {
+  background: #fff !important;
+  color: #232a36 !important;
+  position: relative;
+}
+.tool-btn[data-tool="erase"] svg {
+  display: none;
+}
+.tool-btn[data-tool="erase"]::after {
+  content: 'E';
+  color: #232a36;
+  font-weight: bold;
+  font-size: 1.2em;
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+}
 
 /* grid */
 .grid-container{width:100%;max-width:720px;margin:auto;
@@ -114,6 +155,18 @@ canvas#grid{display:block;width:100%;height:auto;background:var(--bg);
 }
 .cell-path {
   box-shadow: 0 0 8px 2px var(--path);
+}
+#grid {
+  margin-top: 0 !important;
+  margin-bottom: 1.5rem !important;
+  display: block;
+}
+
+/* Align run controls horizontally with other controls */
+.run-controls {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
 }
 
 /* legend */

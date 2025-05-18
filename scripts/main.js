@@ -264,38 +264,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
       grid.push(row);
     }
-    function drawGrid(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      for(let y=0;y<gridHeight;y++){
-        for(let x=0;x<gridWidth;x++){
-          const state = grid[y][x];
-          ctx.globalAlpha = state === FRONTIER ? 0.7 : 1;
-          ctx.fillStyle =
-            state===EMPTY   ? colors.empty   :
-            state===WALL    ? colors.wall    :
-            state===START   ? colors.start   :
-            state===END     ? colors.end     :
-            state===VISITED ? colors.visited :
-            state===FRONTIER? colors.frontier: colors.path;
-          ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
-          ctx.globalAlpha = 1;
-    
-          // Add a glow for frontier and path
-          if(state === FRONTIER || state === PATH) {
-            ctx.save();
-            ctx.shadowColor = state === FRONTIER ? colors.frontier : colors.path;
-            ctx.shadowBlur = 12;
-            ctx.strokeStyle = ctx.shadowColor;
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x*cellSize+1, y*cellSize+1, cellSize-2, cellSize-2);
-            ctx.restore();
-          }
-    
-          ctx.strokeStyle = colors.gridLine;
-          ctx.strokeRect(x*cellSize, y*cellSize, cellSize, cellSize);
-        }
-      }
-    }    grid[startPos.y][startPos.x] = START;
+        grid[startPos.y][startPos.x] = START;
     if(endPos) grid[endPos.y][endPos.x] = END;
   }
   function placeRandomSimpleWall() {
@@ -649,4 +618,5 @@ document.addEventListener('DOMContentLoaded',()=>{
   updateAlgorithmDesc();
 
   console.info('%cPathfinding visualizer ready', 'color:#4f8cff');
+  drawGrid();
 });

@@ -15,11 +15,11 @@
   </header>
 
   <main>
-    <!-- CONTROLS -->
-    <section class="section">
-      <div class="controls-bar redesigned-controls">
-        <!-- Left: Algorithm & Grid -->
-        <div class="controls-row">
+    <!-- GRID CONTAINER with CONTROLS INSIDE -->
+    <section class="section grid-container">
+      <!-- CONTROLS -->
+      <div class="controls-bar redesigned-controls" style="gap:0.8rem; margin-bottom: 2.2rem;">
+        <div class="controls-row controls-stack">
           <div class="controls-group">
             <label for="algorithmSelect">Algorithm</label>
             <select id="algorithmSelect"></select>
@@ -36,34 +36,34 @@
               <option value="insane">120 × 80</option>
             </select>
           </div>
-        </div>
-        <!-- Center: Tools -->
-        <div class="controls-row tool-btns-row">
-          <div class="controls-group tool-btns" id="toolBtns" aria-label="Grid Tools"></div>
-        </div>
-        <!-- Right: Actions & Speed -->
-        <div class="controls-row" style="justify-content:flex-end;">
           <div class="controls-group">
-            <button id="startButton" title="Start / Pause" aria-label="Start algorithm">&#9658;</button>
-            <button id="resetButton" class="danger" title="Reset grid" aria-label="Reset grid">&#8635;</button>
-            <button id="mazeButton" title="Generate Maze" aria-label="Generate Maze">Maze</button>
+            <label for="mazeTypeSelect">Maze</label>
+            <select id="mazeTypeSelect" style="min-width:110px;">
+              <option value="simple">Simple</option>
+              <option value="complex">Complex</option>
+            </select>
+            <button id="mazeButton" title="Generate Maze" aria-label="Generate Maze">Generate</button>
           </div>
           <div class="controls-group">
             <label for="speedSlider">Speed</label>
-            <input type="range" id="speedSlider" min="1" max="10" step="1" value="5" style="width:110px;">
-            <span id="speedValue" style="min-width:60px;display:inline-block;">5</span>
-          </div>
-          <div class="controls-group" id="elapsedTimeGroup">
-            <label id="elapsedTimeLabel" for="elapsedTime">Elapsed</label>
+            <input type="range" id="speedSlider" min="1" max="10" step="1" value="5" style="width:90px;">
+            <span id="speedValue" style="min-width:28px;display:inline-block;">5</span>
+            <span style="margin:0 0.5em;">-</span>
+            <label id="elapsedTimeLabel" for="elapsedTime" style="margin:0;">Elapsed</label>
             <span id="elapsedTime" style="min-width:54px;display:inline-block;">0.00s</span>
           </div>
+          <div class="controls-group run-controls">
+            <label for="startButton" style="margin-right:0.4em;">Run</label>
+            <button id="startButton" title="Start / Pause" aria-label="Start algorithm">&#9658;</button>
+            <button id="resetButton" class="danger" title="Reset grid" aria-label="Reset grid">&#8635;</button>
+          </div>
+        </div>
+        <div class="controls-row tool-btns-row" style="margin-top:0.7em;">
+          <div class="controls-group tool-btns" id="toolBtns" aria-label="Grid Tools"></div>
         </div>
       </div>
-    </section>
-
-    <!-- GRID -->
-    <section class="section grid-container">
-      <canvas id="grid" width="616" height="392" tabindex="0" aria-label="Interactive pathfinding grid"></canvas>
+      <!-- Add margin-top to the grid for spacing -->
+      <canvas id="grid" width="616" height="392" tabindex="0" aria-label="Interactive pathfinding grid" style="display:block;margin:0 auto 1.5rem auto;"></canvas>
       <div class="legend" aria-hidden="true">
         <div class="legend-item"><span class="legend-swatch swatch-start"></span>Start</div>
         <div class="legend-item"><span class="legend-swatch swatch-end"></span>End</div>
@@ -76,24 +76,96 @@
 
     <!-- HOW-TO -->
     <section class="section">
-      <h2>How to use</h2>
-      <ul>
-        <li>Select a tool (wall, start, end, erase) then click / drag on the grid.</li>
-        <li>Change <strong>Grid Density</strong> any time to reset and get a bigger / smaller canvas.</li>
-        <li>Press <kbd>▶</kbd> to run, <kbd>↻</kbd> to reset.</li>
-      </ul>
+      <h2 style="margin-top:0;">How to use</h2>
+      <ol style="margin:0 0 0 1.2em;padding:0 0 0 0.2em;line-height:1.7;">
+        <li>
+          <strong>Select a tool</strong> (Wall, Start, End, Erase) and <strong>click or drag</strong> on the grid to edit cells.
+        </li>
+        <li>
+          <strong>Change Grid Size</strong> to reset and get a bigger or smaller canvas.
+        </li>
+        <li>
+          <strong>Choose an algorithm</strong> from the dropdown.
+        </li>
+        <li>
+          <strong>Generate a maze</strong> using the Maze dropdown for quick tests.
+        </li>
+        <li>
+          <strong>Press <kbd>▶</kbd> to run</strong> the algorithm, <kbd>↻</kbd> to reset.
+        </li>
+        <li>
+          <strong>Adjust speed</strong> with the slider for step-by-step or instant visualization.
+        </li>
+      </ol>
     </section>
 
     <!-- ABOUT -->
     <section class="section">
-      <h2>About the algorithms</h2>
-      <p>
-        <strong>Dijkstra’s</strong> explores every shortest path cost from the start.<br />
-        <strong>A*</strong> adds a heuristic, making it dramatically faster in most cases.<br />
-        <strong>BFS</strong> is unweighted and guarantees shortest path on grids.<br />
-        The architecture is modular – drop additional algorithms into
-        <code>/scripts/algorithms</code> and register them in <code>main.js</code>.
-      </p>
+      <h2 style="margin-top:0;">Algorithms</h2>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;margin-top:.7em;">
+          <thead>
+            <tr style="background:var(--surface);">
+              <th style="text-align:left;padding:.6em 1em 0.6em 0.5em;font-size:1.08em;color:var(--accent);border-bottom:1px solid var(--muted);">Name</th>
+              <th style="text-align:left;padding:.6em 0.5em 0.6em 0.5em;font-size:1.08em;color:var(--accent);border-bottom:1px solid var(--muted);">Description</th>
+              <th style="text-align:left;padding:.6em 0.5em 0.6em 0.5em;font-size:1.08em;color:var(--accent);border-bottom:1px solid var(--muted);">Comparison</th>
+              <th style="text-align:left;padding:.6em 0.5em 0.6em 0.5em;font-size:1.08em;color:var(--accent);border-bottom:1px solid var(--muted);">Use Case</th>
+              <th style="text-align:left;padding:.6em 0.5em 0.6em 0.5em;font-size:1.08em;color:var(--accent);border-bottom:1px solid var(--muted);">Reference</th>
+            </tr>
+          </thead>
+          <tbody style="font-size:1em;">
+            <tr>
+              <td style="padding:.5em 1em .5em 0.5em;"><strong>A* (A-star)</strong></td>
+              <td style="padding:.5em 0.5em;">Efficiently finds the shortest path using cost and heuristic.</td>
+              <td style="padding:.5em 0.5em;">Fast, optimal, needs heuristic.</td>
+              <td style="padding:.5em 0.5em;">Navigation, games, robotics</td>
+              <td style="padding:.5em 0.5em;"><a href="https://en.wikipedia.org/wiki/A*_search_algorithm" target="_blank">Wikipedia</a></td>
+            </tr>
+            <tr>
+              <td style="padding:.5em 1em .5em 0.5em;"><strong>Greedy Best‑First</strong></td>
+              <td style="padding:.5em 0.5em;">Expands nodes closest to goal using only heuristic.</td>
+              <td style="padding:.5em 0.5em;">Very fast, not always optimal.</td>
+              <td style="padding:.5em 0.5em;">Quick approximate paths</td>
+              <td style="padding:.5em 0.5em;"><a href="https://en.wikipedia.org/wiki/Best-first_search" target="_blank">Wikipedia</a></td>
+            </tr>
+            <tr>
+              <td style="padding:.5em 1em .5em 0.5em;"><strong>Dijkstra’s</strong></td>
+              <td style="padding:.5em 0.5em;">Finds shortest path by exploring all lowest-cost options.</td>
+              <td style="padding:.5em 0.5em;">Optimal, slower than A*.</td>
+              <td style="padding:.5em 0.5em;">Maps, weighted graphs</td>
+              <td style="padding:.5em 0.5em;"><a href="https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm" target="_blank">Wikipedia</a></td>
+            </tr>
+            <tr>
+              <td style="padding:.5em 1em .5em 0.5em;"><strong>Breadth‑First Search (BFS)</strong></td>
+              <td style="padding:.5em 0.5em;">Explores all neighbors at each depth before going deeper.</td>
+              <td style="padding:.5em 0.5em;">Optimal on unweighted grids.</td>
+              <td style="padding:.5em 0.5em;">Unweighted mazes, puzzles</td>
+              <td style="padding:.5em 0.5em;"><a href="https://en.wikipedia.org/wiki/Breadth-first_search" target="_blank">Wikipedia</a></td>
+            </tr>
+            <tr>
+              <td style="padding:.5em 1em .5em 0.5em;"><strong>Bidirectional BFS</strong></td>
+              <td style="padding:.5em 0.5em;">Runs BFS from both start and end, meeting in the middle.</td>
+              <td style="padding:.5em 0.5em;">Very fast, optimal on unweighted grids.</td>
+              <td style="padding:.5em 0.5em;">Large open grids</td>
+              <td style="padding:.5em 0.5em;"><a href="https://en.wikipedia.org/wiki/Bidirectional_search" target="_blank">Wikipedia</a></td>
+            </tr>
+            <tr>
+              <td style="padding:.5em 1em .5em 0.5em;"><strong>Depth‑First Search (DFS)</strong></td>
+              <td style="padding:.5em 0.5em;">Explores as far as possible before backtracking.</td>
+              <td style="padding:.5em 0.5em;">Fast, not optimal.</td>
+              <td style="padding:.5em 0.5em;">Maze generation, connectivity</td>
+              <td style="padding:.5em 0.5em;"><a href="https://en.wikipedia.org/wiki/Depth-first_search" target="_blank">Wikipedia</a></td>
+            </tr>
+            <tr>
+              <td style="padding:.5em 1em .5em 0.5em;"><strong>Random Walk</strong></td>
+              <td style="padding:.5em 0.5em;">Moves randomly until it finds the goal or gets stuck.</td>
+              <td style="padding:.5em 0.5em;">Very slow, not optimal.</td>
+              <td style="padding:.5em 0.5em;">Demonstration, randomness</td>
+              <td style="padding:.5em 0.5em;"><a href="https://en.wikipedia.org/wiki/Random_walk" target="_blank">Wikipedia</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   </main>
   <script type="module" src="scripts/main.js"></script>

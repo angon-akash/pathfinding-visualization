@@ -1,4 +1,4 @@
-import { neighbors, key, paint, resetGridState, SimpleQueue } from './utils.js';
+import { neighbors, key, paint, resetGridState, SimpleQueue, reconstructPath } from './utils.js';
 
 export class BidirectionalBFSAlgorithm {
   constructor(grid, startPos, endPos, cellSize, gridWidth, gridHeight) {

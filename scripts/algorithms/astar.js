@@ -36,6 +36,7 @@ export class AStarAlgorithm {
 
     this.closed.add(key(current));
     paint(this.grid, current, this.VISITED, this.START, this.END);
+    let nodesVisited = 1; 
 
     for (const n of neighbors(current, this, this.allowDiagonal)) {
       const nk = key(n);
@@ -50,7 +51,7 @@ export class AStarAlgorithm {
         paint(this.grid, n, this.FRONTIER, this.START, this.END);
       }
     }
-    return { status: 'running' };
+    return { status: 'running', nodesVisited };
   }
 }
 

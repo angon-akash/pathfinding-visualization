@@ -23,6 +23,7 @@ export class RandomWalkAlgorithm {
     }
 
     paint(this.grid, this.current, this.VISITED, this.START, this.END);
+    let nodesVisited = 1;
 
     const neighborsList = neighbors(this.current, this);
     if (!neighborsList.length) return { status: 'no-path' };
@@ -37,6 +38,6 @@ export class RandomWalkAlgorithm {
     }
 
     this.current = next;
-    return { status: 'running' };
+    return { status: 'running', nodesVisited };
   }
 }

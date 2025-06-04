@@ -28,13 +28,16 @@ export class BidirectionalBFSAlgorithm {
       const current = queue.dequeue();
 
       paint(this.grid, current, this.VISITED, this.START, this.END);
+      let nodesVisited = 1;
 
       for (const n of neighbors(current, this)) {
         const nk = key(n);
         if (otherVis.has(nk)) {
           reconstructPath(came, current, this.grid, this.START, this.PATH);
           reconstructPath(isStart ? this.cameB : this.cameA, n, this.grid, this.END, this.PATH);
-          return { status: 'found' };
+          if (this.grid[current.y][current.x] !== this.START) this.grid[current.y][current.x] = this.PATH;
+          if (this.grid[n.y][n.x] !== this.END) this.grid[n.y][n.x] = this.PATH;
+          return { status: 'found', nodesVisited };
         }
         if (vis.has(nk)) continue;
         vis.add(nk);
@@ -42,13 +45,16 @@ export class BidirectionalBFSAlgorithm {
         queue.enqueue(n);
         paint(this.grid, n, this.FRONTIER, this.START, this.END);
       }
-      return { status: 'running' };
+      return { status: 'running', nodesVisited };
     };
 
     const statusA = expand(this.queueA, this.cameA, this.visA, this.visB, true);
     if (statusA.status === 'found') return statusA;
 
     const statusB = expand(this.queueB, this.cameB, this.visB, this.visA, false);
-    return statusB;
+    return {
+      status: statusB.status,
+      nodesVisited: (statusA.nodesVisited || 0) + (statusB.nodesVisited || 0)
+    };
   }
 }

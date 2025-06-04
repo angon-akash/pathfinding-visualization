@@ -60,6 +60,15 @@ A simple and interactive visualization tool for popular pathfinding algorithms. 
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
+
+## Tests
+
+Run the priority queue test with:
+
+```sh
+node tests/priorityQueue.test.js
+```
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).

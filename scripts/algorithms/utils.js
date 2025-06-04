@@ -76,7 +76,7 @@ export class SimpleQueue {
   dequeue() {
     if (this.isEmpty()) return undefined;
     const item = this._a[this._h++];
-    /* tilt clean-up to stop unbounded growth */
+    /* periodic clean-up to stop unbounded growth */
     if (this._h > 32 && this._h * 2 > this._a.length) {
       this._a = this._a.slice(this._h);               // compact
       this._h = 0;

@@ -672,5 +672,4 @@ document.addEventListener('DOMContentLoaded',()=>{
   updateAlgorithmDesc();
 
   console.info('%cPathfinding visualizer ready', 'color:#4f8cff');
-  drawGrid();
 });

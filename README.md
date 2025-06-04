@@ -15,34 +15,14 @@ A simple and interactive visualization tool for popular pathfinding algorithms. 
 
 ## Getting Started
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (if using a JavaScript framework)
-- [npm](https://www.npmjs.com/) or yarn
-
-### Installation
-
 1. Clone the repository:
     ```sh
     git clone https://github.com/angon-akash/pathfinding-visualization.git
     cd pathfinding-visualization
     ```
 
-2. Install dependencies:
-    ```sh
-    npm install
-    # or
-    yarn install
-    ```
-
-3. Start the application:
-    ```sh
-    npm start
-    # or
-    yarn start
-    ```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+2. Open `index.html` directly in your browser. No additional setup or
+   dependencies are required.
 
 ## Usage
 

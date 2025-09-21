@@ -18,10 +18,11 @@ main{max-width:880px;margin:auto;padding:1.5rem 1rem 2.5rem;display:flex;
   flex-direction:column;gap:1.5rem}
 .section{background:var(--surface);border-radius:var(--radius);
   box-shadow:var(--shadow);padding:1.2rem 1.5rem}
+.section h2{margin-top:0}
 
 /* controls */
 .controls-bar{display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;
-  justify-content:space-between; width: 100%; box-sizing: border-box; margin-bottom: 2.2rem;}
+  justify-content:space-between;width:100%;box-sizing:border-box;margin-bottom:2.2rem}
 .controls-group{display:flex;gap:.7rem;align-items:center}
 button,select{font-size:1rem;border-radius:var(--radius);border:0;outline:0;
   padding:.5rem 1.1rem;background:var(--accent);color:#fff;cursor:pointer;
@@ -48,10 +49,7 @@ select{background:var(--surface);color:var(--text);border:1px solid var(--muted)
   justify-content: flex-start;
   margin-bottom: 0.5rem;
 }
-.tool-btns-row {
-  justify-content: center;
-  margin-bottom: 0.5rem;
-}
+.tool-btns-row{justify-content:center;margin-bottom:.7rem}
 .controls-group {
   display: flex;
   gap: .7rem;
@@ -65,6 +63,12 @@ select{background:var(--surface);color:var(--text);border:1px solid var(--muted)
   margin-right: .3em;
   white-space: nowrap;
 }
+.controls-group--maze select{min-width:110px}
+.controls-group--speed input[type="range"]{width:120px}
+.controls-group--speed .controls-separator{margin:0 .5em;color:var(--muted)}
+.speed-value,.elapsed-time{min-width:64px;display:inline-block;text-align:center;font-variant-numeric:tabular-nums}
+.speed-value{min-width:64px}
+.elapsed-time{min-width:60px}
 @media (min-width: 700px) {
   .redesigned-controls {
     flex-direction: row;
@@ -74,9 +78,7 @@ select{background:var(--surface);color:var(--text);border:1px solid var(--muted)
   .controls-row {
     margin-bottom: 0;
   }
-  .tool-btns-row {
-    margin-bottom: 0;
-  }
+  .tool-btns-row {margin-bottom:0}
 }
 
 /* Stack controls vertically on small screens, horizontally on wide */
@@ -140,12 +142,8 @@ select{background:var(--surface);color:var(--text);border:1px solid var(--muted)
   display:flex;flex-direction:column;align-items:center}
 canvas#grid{display:block;width:100%;height:auto;background:var(--bg);
   border-radius:var(--radius);box-shadow:var(--shadow);
-  border:1px solid var(--muted);outline:none;cursor: crosshair;
-  transition: background 0.2s;
-}
-.grid-container canvas#grid {
-  border: 1px solid var(--muted);
-  transition: none;
+  border:1px solid var(--muted);outline:none;margin:0 auto 1.5rem;
+  touch-action:none;transition:background var(--transition);
 }
 .cell-animate {
   transition: fill 0.18s, background 0.18s;
@@ -156,18 +154,22 @@ canvas#grid{display:block;width:100%;height:auto;background:var(--bg);
 .cell-path {
   box-shadow: 0 0 8px 2px var(--path);
 }
-#grid {
-  margin-top: 0 !important;
-  margin-bottom: 1.5rem !important;
-  display: block;
-}
+.run-controls{display:flex;align-items:center;gap:.7rem}
 
-/* Align run controls horizontally with other controls */
-.run-controls {
-  display: flex;
-  align-items: center;
-  gap: .7rem;
-}
+.algorithm-desc{margin:1.2rem auto .5rem; padding:.7rem .5rem;text-align:center;
+  min-height:2.5em;font-size:1.05em;font-weight:500;color:var(--muted);
+  width:100%;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(17,24,39,.35);border-radius:0 0 var(--radius) var(--radius);
+  box-shadow:0 2px 8px rgba(0,0,0,.03)}
+.algorithm-desc__title{display:block;font-size:1.13em;font-weight:600;color:var(--text);
+  margin-bottom:.15em}
+.algorithm-desc__body{display:block;font-size:.98em;font-weight:400;color:var(--muted)}
+
+.grid-stats{display:flex;gap:.6em;justify-content:center;align-items:center;
+  text-align:center;margin:1.1em 0 .5em;color:var(--muted);font-size:1.08em}
+.grid-stats__separator{color:var(--muted)}
+
+.howto-list{margin:0 0 0 1.2em;padding:0 0 0 .2em;line-height:1.7}
 
 /* legend */
 .legend{display:flex;flex-wrap:wrap;gap:1.2rem;margin-top:.6rem}
@@ -180,4 +182,3 @@ canvas#grid{display:block;width:100%;height:auto;background:var(--bg);
 @media(max-width:700px){
   main{padding:.75rem}.section{padding:.8rem}.legend{gap:.6rem}
 }
-

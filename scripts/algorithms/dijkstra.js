@@ -1,4 +1,3 @@
-// scripts/algorithms/dijkstra.js
 import { neighbors, key, paint, reconstructPath, resetGridState } from './utils.js';
 import PriorityQueue from './priorityQueue.js';
 

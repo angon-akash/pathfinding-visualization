@@ -1,675 +1,471 @@
-import { AStarAlgorithm }   from './algorithms/astar.js';
-import { DijkstraAlgorithm }from './algorithms/dijkstra.js';
-import { BFSAlgorithm }     from './algorithms/bfs.js';
-// Add imports for new algorithms:
-import { DFSAlgorithm }     from './algorithms/dfs.js';
-import { GreedyAlgorithm }  from './algorithms/greedy.js';
-import { RandomWalkAlgorithm } from './algorithms/randomwalk.js';
-// Add new import:
-import { BidirectionalBFSAlgorithm } from './algorithms/bidirectionalbfs.js';
+import {
+  CELL_SIZE,
+  CELL_STATE,
+  DENSITIES,
+  TOOLS,
+  ALGORITHM_THEMES,
+  BASE_COLORS,
+} from './config.js';
+import { GridModel } from './grid.js';
+import { GridRenderer } from './renderer.js';
+import { ALGORITHMS, getAlgorithmMeta } from './algorithms/registry.js';
 
-/* ============================================================
-   Config & State
-============================================================ */
-const cellSize = 28;
-const DENSITIES = {
-  tiny:    { cols: 12, rows: 8 },
-  small:   { cols: 18, rows: 12 },
-  medium:  { cols: 32, rows: 20 },
-  large:   { cols: 44, rows: 28 },
-  xlarge:  { cols: 60, rows: 38 },
-  extreme: { cols: 80, rows: 50 },
-  insane:  { cols: 120, rows: 80 } // Extremely high density
-};
+class PathfindingApp {
+  constructor(doc) {
+    this.doc = doc;
+    this.canvas = doc.getElementById('grid');
+    this.renderer = new GridRenderer(this.canvas);
 
-let gridWidth  = DENSITIES.medium.cols;
-let gridHeight = DENSITIES.medium.rows;
-let grid = [];
-let startPos, endPos;
+    const defaultDensity = DENSITIES.medium;
+    this.grid = new GridModel({ width: defaultDensity.cols, height: defaultDensity.rows });
 
-const colors = {
-  empty   : '#181c24',
-  wall    : '#475569',
-  start   : '#22c55e',
-  end     : '#e74c3c',
-  visited : '#a78bfa',
-  frontier: '#38bdf8',
-  path    : '#fbbf24',
-  gridLine: '#232a36'
-};
+    this.algorithmSelect = doc.getElementById('algorithmSelect');
+    this.densitySelect = doc.getElementById('densitySelect');
+    this.mazeTypeSelect = doc.getElementById('mazeTypeSelect');
+    this.mazeButton = doc.getElementById('mazeButton');
+    this.toolButtonsWrap = doc.getElementById('toolBtns');
+    this.speedSlider = doc.getElementById('speedSlider');
+    this.speedValue = doc.getElementById('speedValue');
+    this.startButton = doc.getElementById('startButton');
+    this.resetButton = doc.getElementById('resetButton');
+    this.elapsedTimeLabel = doc.getElementById('elapsedTime');
+    this.nodesLabel = doc.getElementById('nodesExplored');
+    this.pathLabel = doc.getElementById('pathLength');
+    this.algorithmDesc = doc.getElementById('algorithmDesc');
+    this.legendSwatches = {
+      start: doc.querySelector('[data-swatch="start"]'),
+      end: doc.querySelector('[data-swatch="end"]'),
+      wall: doc.querySelector('[data-swatch="wall"]'),
+      visited: doc.querySelector('[data-swatch="visited"]'),
+      frontier: doc.querySelector('[data-swatch="frontier"]'),
+      path: doc.querySelector('[data-swatch="path"]'),
+    };
 
-const EMPTY=0,WALL=1,START=2,END=3,VISITED=4,FRONTIER=5,PATH=6;
+    this.currentTool = TOOLS[0].id;
+    this.isRunning = false;
+    this.intervalId = null;
+    this.currentAlgorithm = null;
+    this.pointerActive = false;
 
-// Algorithm metadata: fastest to slowest (approximate order)
-const ALGORITHMS = [
-  {
-    id:'astar',
-    name:'A* (Shortest Path)',
-    class:AStarAlgorithm,
-    desc:'A* uses both path cost and a heuristic to efficiently find the shortest path. Fast and optimal on grids.'
-  },
-  {
-    id:'greedy',
-    name:'Greedy Best‑First',
-    class:GreedyAlgorithm,
-    desc:'Greedy Best-First Search explores nodes closest to the goal, using only the heuristic. Fast but not always optimal.'
-  },
-  {
-    id:'dijkstra',
-    name:'Dijkstra’s',
-    class:DijkstraAlgorithm,
-    desc:'Dijkstra’s algorithm explores all possible paths with the lowest cost first. Guarantees shortest path.'
-  },
-  {
-    id:'bfs',
-    name:'Breadth‑First Search',
-    class:BFSAlgorithm,
-    desc:'BFS explores all neighbors at the current depth before moving deeper. Guarantees shortest path on unweighted grids.'
-  },
-  {
-    id:'bidirectionalbfs',
-    name:'Bidirectional BFS',
-    class:BidirectionalBFSAlgorithm,
-    desc:'Bidirectional BFS runs two simultaneous searches from start and end, meeting in the middle. Very fast for large open grids.'
-  },
-  {
-    id:'dfs',
-    name:'Depth‑First Search',
-    class:DFSAlgorithm,
-    desc:'DFS explores as far as possible along each branch before backtracking. Fast but does not guarantee shortest path.'
-  },
-  {
-    id:'random',
-    name:'Random Walk',
-    class:RandomWalkAlgorithm,
-    desc:'Random Walk moves randomly until it finds the goal or gets stuck. Very slow and not guaranteed to find a path.'
-  }
-];
-
-const TOOLS = [
-  {
-    id:'wall', label:'Wall',
-    svg:`<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" fill="#475569"/></svg>`
-  },
-  {
-    id:'start', label:'Start',
-    svg:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#22c55e"/><polygon points="10,8 16,12 10,16" fill="#ffffff"/></svg>`
-  },
-  {
-    id:'end', label:'End',
-    svg:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#e74c3c"/><rect x="10" y="8" width="4" height="8" fill="#ffffff"/></svg>`
-  },
-  {
-    id:'erase', label:'Erase',
-    svg:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#232a36"/><line x1="8" y1="8" x2="16" y2="16" stroke="#7b8794" stroke-width="2"/><line x1="16" y1="8" x2="8" y2="16" stroke="#7b8794" stroke-width="2"/></svg>`
-  }
-];
-
-let isRunning=false, intervalId=null, currentAlgorithm=null, currentTool='wall';
-let elapsedStart = null;
-let elapsedTimer = null;
-
-// Add stats variables and helpers near the top (after let elapsedTimer = null;)
-let nodesExplored = 0;
-let pathLength = 0;
-
-function updateStatsDisplay() {
-  document.getElementById('nodesExplored').textContent = `Nodes explored: ${nodesExplored}`;
-  document.getElementById('pathLength').textContent = `Path length: ${pathLength}`;
-}
-function resetStats() {
-  nodesExplored = 0;
-  pathLength = 0;
-  updateStatsDisplay();
-}
-
-function resetElapsedTime() {
-  elapsedStart = null;
-  document.getElementById('elapsedTime').textContent = '0.00s';
-  if (elapsedTimer) clearInterval(elapsedTimer);
-}
-
-function startElapsedTime() {
-  elapsedStart = performance.now();
-  elapsedTimer = setInterval(() => {
-    const now = performance.now();
-    const elapsed = ((now - elapsedStart) / 1000).toFixed(2);
-    document.getElementById('elapsedTime').textContent = `${elapsed}s`;
-  }, 50);
-}
-
-function stopElapsedTime() {
-  if (elapsedTimer) clearInterval(elapsedTimer);
-  elapsedTimer = null;
-}
-
-/* ============================================================
-   DOM — once document loaded
-============================================================ */
-document.addEventListener('DOMContentLoaded',()=>{
-  const canvas  = document.getElementById('grid');
-  const ctx     = canvas.getContext('2d');
-  const startBtn       = document.getElementById('startButton');
-  const resetBtn       = document.getElementById('resetButton');
-  const speedSlider    = document.getElementById('speedSlider');
-  const speedValue     = document.getElementById('speedValue');
-  const algorithmSelect= document.getElementById('algorithmSelect');
-  const densitySelect  = document.getElementById('densitySelect');
-  const toolBtnsWrap   = document.getElementById('toolBtns');
-  const mazeBtn        = document.getElementById('mazeButton');
-
-  // --- Maze Type Dropdown ---
-  let mazeTypeSelect = document.getElementById('mazeTypeSelect');
-  if (!mazeTypeSelect) {
-    mazeTypeSelect = document.createElement('select');
-    mazeTypeSelect.id = 'mazeTypeSelect';
-    mazeTypeSelect.style.marginLeft = '0.7em';
-    mazeTypeSelect.title = 'Maze Complexity';
-    mazeTypeSelect.innerHTML = `
-      <option value="simple">Simple Maze</option>
-      <option value="complex">Complex Maze</option>
-    `;
-    mazeBtn.parentElement.insertBefore(mazeTypeSelect, mazeBtn.nextSibling);
+    this.nodesExplored = 0;
+    this.pathLength = 0;
+    this.elapsedStart = null;
+    this.elapsedTimer = null;
   }
 
-  // Move algorithm description/title below the grid, after the legend
-  const gridSection = document.querySelector('.grid-container');
-  const legend = gridSection.querySelector('.legend');
-  let algorithmDescWrap = document.getElementById('algorithmDescWrap');
-  if (algorithmDescWrap) algorithmDescWrap.remove();
-  algorithmDescWrap = document.createElement('div');
-  algorithmDescWrap.id = 'algorithmDescWrap';
-  algorithmDescWrap.style.margin = '1.2rem auto 0.5rem auto';
-  algorithmDescWrap.style.padding = '0.7rem 0 0.5rem 0';
-  algorithmDescWrap.style.textAlign = 'center';
-  algorithmDescWrap.style.minHeight = '2.5em';
-  algorithmDescWrap.style.fontSize = '1.08em';
-  algorithmDescWrap.style.fontWeight = '500';
-  algorithmDescWrap.style.color = 'var(--muted)';
-  algorithmDescWrap.style.width = '100%';
-  algorithmDescWrap.style.boxSizing = 'border-box';
-  algorithmDescWrap.style.background = 'var(--surface)';
-  algorithmDescWrap.style.borderRadius = '0 0 var(--radius) var(--radius)';
-  algorithmDescWrap.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)';
-  algorithmDescWrap.style.borderTop = '1px solid var(--muted)';
-  legend.insertAdjacentElement('afterend', algorithmDescWrap);
-
-  function updateAlgorithmDesc() {
-    const algo = ALGORITHMS.find(a => a.id === algorithmSelect.value);
-    if (algo) {
-      algorithmDescWrap.innerHTML = `
-        <div style="font-size:1.13em;font-weight:600;color:var(--text);margin-bottom:0.15em;">
-          ${algo.name}
-        </div>
-        <div style="font-size:.98em;color:var(--muted);font-weight:400;">
-          ${algo.desc}
-        </div>
-      `;
-    } else {
-      algorithmDescWrap.innerHTML = '';
-    }
+  init() {
+    this.populateAlgorithmSelect();
+    this.populateDensitySelect();
+    this.renderToolButtons();
+    this.bindEvents();
+    const meta = this.getCurrentAlgorithmMeta();
+    this.applyThemeForAlgorithm(meta);
+    this.renderer.resize(this.grid);
+    this.updateAlgorithmDescription(meta);
+    this.updateSpeedLabel();
+    this.updateStatsDisplay();
   }
 
-  // --- Maze Generation Functions ---
-  function generateSimpleMaze() {
-    // Clear grid, then add a few random walls (not blocking start/end)
-    for (let y = 0; y < gridHeight; y++)
-      for (let x = 0; x < gridWidth; x++)
-        if (grid[y][x] !== START && grid[y][x] !== END) grid[y][x] = EMPTY;
-    // Place several random walls
-    const wallCount = Math.floor((gridWidth * gridHeight) / 7);
-    let placed = 0, tries = 0;
-    while (placed < wallCount && tries++ < wallCount * 4) {
-      const x = Math.floor(Math.random() * gridWidth);
-      const y = Math.floor(Math.random() * gridHeight);
-      if (
-        grid[y][x] === EMPTY &&
-        !(x === startPos.x && y === startPos.y) &&
-        !(endPos && x === endPos.x && y === endPos.y)
-      ) {
-        grid[y][x] = WALL;
-        placed++;
-      }
-    }
-  }
-
-  function generateComplexMaze() {
-    // Use the existing recursive backtracker maze with loops
-    generateMaze();
-  }
-
-  /* ---------- Controls/Buttons UI ---------- */
-  algorithmSelect.innerHTML = ALGORITHMS.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
-  function renderToolButtons(){
-    toolBtnsWrap.innerHTML='';
-    TOOLS.forEach(t=>{
-      const b=document.createElement('button');
-      b.type='button';
-      b.className='tool-btn'+(t.id===currentTool?' selected':'');
-      b.dataset.tool=t.id;
-      b.title=b.ariaLabel=t.label;
-      b.innerHTML=t.svg;
-      b.onclick=()=>{ currentTool=t.id; renderToolButtons(); updateCursor(); };
-      toolBtnsWrap.appendChild(b);
+  populateAlgorithmSelect() {
+    this.algorithmSelect.innerHTML = '';
+    ALGORITHMS.forEach((algo, index) => {
+      const option = this.doc.createElement('option');
+      option.value = algo.id;
+      option.textContent = algo.name;
+      if (index === 0) option.selected = true;
+      this.algorithmSelect.appendChild(option);
     });
   }
-  function updateCursor() {
-    switch (currentTool) {
-      case 'wall':   canvas.style.cursor = 'crosshair'; break;
-      case 'erase':  canvas.style.cursor = 'not-allowed'; break;
-      case 'start':  case 'end': canvas.style.cursor = 'cell'; break;
-      default:       canvas.style.cursor = 'pointer';
-    }
+
+  populateDensitySelect() {
+    this.densitySelect.innerHTML = '';
+    Object.entries(DENSITIES).forEach(([key, { cols, rows }]) => {
+      const option = this.doc.createElement('option');
+      option.value = key;
+      option.textContent = `${cols} × ${rows}`;
+      if (key === 'medium') option.selected = true;
+      this.densitySelect.appendChild(option);
+    });
   }
 
-  /* ---------- grid helpers ---------- */
-  function setDefaultPositions() {
-    startPos = { x: 1, y: Math.floor(gridHeight / 2) };
-    endPos   = { x: gridWidth - 2, y: Math.floor(gridHeight / 2) };
-  }
-  function initGrid() {
-    grid = [];
-    for (let y = 0; y < gridHeight; y++) {
-      const row = [];
-      for (let x = 0; x < gridWidth; x++) {
-        if (x === startPos.x && y === startPos.y) row.push(START);
-        else if (endPos && x === endPos.x && y === endPos.y) row.push(END);
-        else row.push(EMPTY);
-      }
-      grid.push(row);
-    }
-        grid[startPos.y][startPos.x] = START;
-    if(endPos) grid[endPos.y][endPos.x] = END;
-  }
-  function placeRandomSimpleWall() {
-    // Random vertical/horizontal wall (min 4 long), not blocking start-end path
-    const isVertical = Math.random() < 0.5;
-    let wallPlaced = false, tries = 0;
-    while (!wallPlaced && tries++ < 40) {
-      if (isVertical) {
-        const x = Math.floor(Math.random() * (gridWidth - 4)) + 2;
-        const yStart = Math.floor(Math.random() * (gridHeight - 6)) + 2;
-        let canPlace = true;
-        for (let y = yStart; y < yStart + 4; y++)
-          if ((x === startPos.x && y === startPos.y) || (x === endPos.x && y === endPos.y))
-            canPlace = false;
-        if (canPlace) {
-          for (let y = yStart; y < yStart + 4; y++) grid[y][x] = WALL;
-          wallPlaced = true;
-        }
+  bindEvents() {
+    this.startButton.addEventListener('click', () => {
+      if (this.isRunning) {
+        this.stopRun();
       } else {
-        const y = Math.floor(Math.random() * (gridHeight - 4)) + 2;
-        const xStart = Math.floor(Math.random() * (gridWidth - 6)) + 2;
-        let canPlace = true;
-        for (let x = xStart; x < xStart + 4; x++)
-          if ((x === startPos.x && y === startPos.y) || (x === endPos.x && y === endPos.y))
-            canPlace = false;
-        if (canPlace) {
-          for (let x = xStart; x < xStart + 4; x++) grid[y][x] = WALL;
-          wallPlaced = true;
-        }
+        this.startRun();
       }
-    }
-  }
-  function drawGrid(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    for(let y=0;y<gridHeight;y++){
-      for(let x=0;x<gridWidth;x++){
-        const state = grid[y][x];
-        ctx.globalAlpha = state === FRONTIER ? 0.7 : 1;
-        ctx.fillStyle =
-          state===EMPTY   ? colors.empty   :
-          state===WALL    ? colors.wall    :
-          state===START   ? colors.start   :
-          state===END     ? colors.end     :
-          state===VISITED ? colors.visited :
-          state===FRONTIER? colors.frontier: colors.path;
-        ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
-        ctx.globalAlpha = 1;
+    });
 
-        // Glow for frontier/path
-        if(state === FRONTIER || state === PATH) {
-          ctx.save();
-          ctx.shadowColor = state === FRONTIER ? colors.frontier : colors.path;
-          ctx.shadowBlur = 12;
-          ctx.strokeStyle = ctx.shadowColor;
-          ctx.lineWidth = 2;
-          ctx.strokeRect(x*cellSize+1, y*cellSize+1, cellSize-2, cellSize-2);
-          ctx.restore();
-        }
+    this.resetButton.addEventListener('click', () => {
+      this.resetGrid();
+    });
 
-        // Draw start/end as circles
-        if(state === START || state === END) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(
-            x*cellSize + cellSize/2,
-            y*cellSize + cellSize/2,
-            cellSize*0.35, 0, 2*Math.PI
-          );
-          ctx.fillStyle = state === START ? colors.start : colors.end;
-          ctx.shadowColor = state === START ? colors.start : colors.end;
-          ctx.shadowBlur = 10;
-          ctx.fill();
-          ctx.restore();
-        }
+    this.speedSlider.addEventListener('input', () => {
+      this.updateSpeedLabel();
+      if (this.isRunning) this.restartLoop();
+    });
 
-        ctx.strokeStyle = colors.gridLine;
-        ctx.strokeRect(x*cellSize, y*cellSize, cellSize, cellSize);
+    this.algorithmSelect.addEventListener('change', () => {
+      this.onAlgorithmChange();
+    });
+
+    this.densitySelect.addEventListener('change', () => {
+      this.onDensityChange();
+    });
+
+    this.mazeButton.addEventListener('click', () => {
+      this.generateMaze();
+    });
+
+    this.canvas.addEventListener('pointerdown', (event) => {
+      if (this.isRunning) return;
+      event.preventDefault();
+      if (this.canvas.setPointerCapture) {
+        try { this.canvas.setPointerCapture(event.pointerId); } catch (err) { /* ignore */ }
       }
-    }
-  }
-  function resizeCanvas(){
-    const wrapW = canvas.parentElement.clientWidth;
-    const scale = Math.min(1, wrapW / (gridWidth*cellSize));
-    canvas.width  = gridWidth  * cellSize * scale;
-    canvas.height = gridHeight * cellSize * scale;
-    ctx.setTransform(scale,0,0,scale,0,0);
-    drawGrid();
-  }
-  window.addEventListener('resize',resizeCanvas);
+      this.pointerActive = true;
+      this.handlePointer(event);
+    });
 
-  /* ---------- pointer helpers ---------- */
-  /**
-   * Map a MouseEvent or TouchEvent to a grid cell index,
-   * regardless of CSS scaling or transform.
-   */
-  function pointerToCell(e) {
-    const rect = canvas.getBoundingClientRect();
-    // distance from canvas’s top-left in CSS pixels
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-    // compute which cell that lands in
-    const cellX = Math.floor((offsetX * gridWidth)  / rect.width);
-    const cellY = Math.floor((offsetY * gridHeight) / rect.height);
-    return { x: cellX, y: cellY };
-  }
+    this.canvas.addEventListener('pointermove', (event) => {
+      if (!this.pointerActive || this.isRunning) return;
+      event.preventDefault();
+      this.handlePointer(event);
+    });
 
-  const inBounds = ({x,y}) => x>=0 && x<gridWidth && y>=0 && y<gridHeight;
-  function editCell({x, y}) {
-    // Always keep start and end on the grid
-    if ((x === startPos.x && y === startPos.y) || (endPos && x === endPos.x && y === endPos.y)) {
-      // Only allow moving start/end if using the corresponding tool
-      if (currentTool === 'start' && !(x === endPos?.x && y === endPos?.y)) {
-        grid[startPos.y][startPos.x] = EMPTY;
-        startPos = {x, y};
-        grid[y][x] = START;
-      } else if (currentTool === 'end' && !(x === startPos.x && y === startPos.y)) {
-        if (endPos) grid[endPos.y][endPos.x] = EMPTY;
-        endPos = {x, y};
-        grid[y][x] = END;
+    window.addEventListener('pointerup', (event) => {
+      this.pointerActive = false;
+      if (this.canvas.releasePointerCapture && typeof event.pointerId === 'number') {
+        try {
+          if (this.canvas.hasPointerCapture?.(event.pointerId)) {
+            this.canvas.releasePointerCapture(event.pointerId);
+          }
+        } catch (err) { /* ignore */ }
       }
-      // Do not allow erase or wall tool to affect start/end
-      return;
-    }
+    });
 
-    switch (currentTool) {
+    this.canvas.addEventListener('pointerleave', (event) => {
+      this.pointerActive = false;
+      if (this.canvas.releasePointerCapture && typeof event.pointerId === 'number') {
+        try {
+          if (this.canvas.hasPointerCapture?.(event.pointerId)) {
+            this.canvas.releasePointerCapture(event.pointerId);
+          }
+        } catch (err) { /* ignore */ }
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      this.renderer.resize(this.grid);
+    });
+  }
+
+  handlePointer(event) {
+    const rect = this.canvas.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+    const x = Math.floor((offsetX / rect.width) * this.grid.width);
+    const y = Math.floor((offsetY / rect.height) * this.grid.height);
+    const target = { x, y };
+    if (!this.grid.inBounds(target)) return;
+    this.applyTool(target);
+    this.renderer.draw(this.grid);
+  }
+
+  applyTool(target) {
+    switch (this.currentTool) {
       case 'wall':
-        // Don't overwrite start or end
-        if (grid[y][x] !== START && grid[y][x] !== END) grid[y][x] = WALL;
+        this.grid.placeWall(target);
         break;
       case 'erase':
-        // Don't erase start or end
-        if (grid[y][x] !== START && grid[y][x] !== END) grid[y][x] = EMPTY;
+        this.grid.erase(target);
         break;
       case 'start':
-        // Only move start if not on end or wall
-        if (grid[y][x] !== END && grid[y][x] !== WALL) {
-          grid[startPos.y][startPos.x] = EMPTY;
-          startPos = {x, y};
-          grid[y][x] = START;
-        }
+        this.grid.moveStart(target);
         break;
       case 'end':
-        // Only move end if not on start or wall
-        if (grid[y][x] !== START && grid[y][x] !== WALL) {
-          if (endPos) grid[endPos.y][endPos.x] = EMPTY;
-          endPos = {x, y};
-          grid[y][x] = END;
-        }
+        this.grid.moveEnd(target);
+        break;
+      default:
         break;
     }
   }
 
-  function isReachable(s, e, grid) {
-    const visited = Array.from({length: gridHeight}, ()=> Array(gridWidth).fill(false));
-    const queue = [s];
-    visited[s.y][s.x] = true;
-    while (queue.length) {
-      const {x, y} = queue.shift();
-      if (x === e.x && y === e.y) return true;
-      for (const [dx, dy] of [[0,1],[1,0],[-1,0],[0,-1]]) {
-        const nx = x + dx, ny = y + dy;
-        if (nx>=0 && nx<gridWidth && ny>=0 && ny<gridHeight && !visited[ny][nx] && grid[ny][nx] !== WALL) {
-          visited[ny][nx] = true;
-          queue.push({x:nx, y:ny});
-        }
-      }
-    }
-    return false;
-  }
-
-  function generateMaze() {
-    // Fill grid with walls
-    for (let y = 0; y < gridHeight; y++) for (let x = 0; x < gridWidth; x++) grid[y][x] = WALL;
-
-    // Carve passages with recursive backtracker
-    function carve(x, y) {
-      grid[y][x] = EMPTY;
-      const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
-      for (let i = dirs.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
-      }
-      dirs.forEach(({dx, dy}) => {
-        const nx = x + dx * 2, ny = y + dy * 2;
-        if (nx > 0 && nx < gridWidth - 1 && ny > 0 && ny < gridHeight - 1 && grid[ny][nx] === WALL) {
-          grid[y + dy][x + dx] = EMPTY;
-          carve(nx, ny);
-        }
+  renderToolButtons() {
+    this.toolButtonsWrap.innerHTML = '';
+    TOOLS.forEach((tool) => {
+      const button = this.doc.createElement('button');
+      button.type = 'button';
+      button.className = `tool-btn${tool.id === this.currentTool ? ' selected' : ''}`;
+      button.dataset.tool = tool.id;
+      button.title = tool.label;
+      button.setAttribute('aria-label', tool.label);
+      button.innerHTML = tool.svg;
+      button.addEventListener('click', () => {
+        this.currentTool = tool.id;
+        this.renderToolButtons();
+        this.updateToolCursor();
       });
-    }
-    carve(1, 1);
+      this.toolButtonsWrap.appendChild(button);
+    });
+    this.updateToolCursor();
+  }
 
-    // --- Add extra openings to create multiple paths ---
-    // Try to remove random walls between empty cells to create loops
-    const extraOpenings = Math.floor((gridWidth * gridHeight) / 18); // tweak this for more/less loops
-    let attempts = 0, opened = 0;
-    while (opened < extraOpenings && attempts < extraOpenings * 10) {
-      attempts++;
-      // Pick a random wall cell not on the border
-      const x = Math.floor(Math.random() * (gridWidth - 2)) + 1;
-      const y = Math.floor(Math.random() * (gridHeight - 2)) + 1;
-      if (grid[y][x] !== WALL) continue;
-      // Check if removing this wall connects two separate empty regions
-      let emptyNeighbors = 0;
-      for (const [dx, dy] of [[0,1],[1,0],[-1,0],[0,-1]]) {
-        const nx = x + dx, ny = y + dy;
-        if (grid[ny][nx] === EMPTY) emptyNeighbors++;
+  updateToolCursor() {
+    const cursor = {
+      wall: 'crosshair',
+      erase: 'not-allowed',
+      start: 'cell',
+      end: 'cell',
+    }[this.currentTool] || 'pointer';
+    this.canvas.style.cursor = cursor;
+  }
+
+  startRun() {
+    const meta = this.getCurrentAlgorithmMeta();
+    if (!meta) return;
+
+    this.grid.clearWalkStates();
+    this.applyThemeForAlgorithm(meta);
+    this.renderer.draw(this.grid);
+
+    this.currentAlgorithm = new meta.class(
+      this.grid.cells,
+      this.grid.start,
+      this.grid.end,
+      CELL_SIZE,
+      this.grid.width,
+      this.grid.height,
+    );
+    this.currentAlgorithm.init();
+    this.isRunning = true;
+    this.startButton.textContent = '❚❚';
+    this.resetStats(true);
+    this.resetTimer();
+    this.startTimer();
+    this.runLoop();
+  }
+
+  stopRun() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+    this.isRunning = false;
+    this.currentAlgorithm = null;
+    this.startButton.textContent = '▶';
+    this.stopTimer();
+  }
+
+  runLoop() {
+    const interval = this.intervalFromSlider();
+    if (interval === 0) {
+      while (this.isRunning && this.step({ deferDraw: true })) {
+        // loop until completion
       }
-      if (emptyNeighbors >= 2) {
-        grid[y][x] = EMPTY;
-        opened++;
-      }
-    }
-
-    // Restore start/end markers
-    grid[startPos.y][startPos.x] = START;
-    if(endPos) grid[endPos.y][endPos.x] = END;
-
-    // If end isn't reachable, move it to a reachable empty cell
-    if (!isReachable(startPos, endPos, grid)) {
-      let found = false;
-      for (let radius = 1; radius < Math.max(gridWidth, gridHeight) && !found; radius++) {
-        for (let dy = -radius; dy <= radius; dy++) {
-          for (let dx = -radius; dx <= radius; dx++) {
-            const nx = endPos.x + dx, ny = endPos.y + dy;
-            if (
-              nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight &&
-              grid[ny][nx] === EMPTY && isReachable(startPos, {x: nx, y: ny}, grid)
-            ) {
-              grid[endPos.y][endPos.x] = EMPTY;
-              endPos = {x: nx, y: ny};
-              grid[endPos.y][endPos.x] = END;
-              found = true; break;
-            }
-          }
-          if (found) break;
-        }
-      }
-    }
-  }
-
-  /* ---------- pointer events ---------- */
-  let drawing=false;
-  canvas.addEventListener('mousedown',e=>{
-    if(isRunning) return;
-    drawing=true; const c=pointerToCell(e); if(inBounds(c)){ editCell(c); drawGrid(); }
-  });
-  canvas.addEventListener('mousemove',e=>{
-    if(isRunning || !drawing) return;
-    const c=pointerToCell(e); if(inBounds(c)){ editCell(c); drawGrid(); }
-  });
-  window.addEventListener('mouseup',()=>drawing=false);
-  const touchHandler = (type) => (e)=>{
-    e.preventDefault();
-    const t=e.touches[0];
-    canvas.dispatchEvent(new MouseEvent(type,{clientX:t.clientX, clientY:t.clientY}));
-  };
-  canvas.addEventListener('touchstart',touchHandler('mousedown'),{passive:false});
-  canvas.addEventListener('touchmove', touchHandler('mousemove'),{passive:false});
-  canvas.addEventListener('touchend', ()=> window.dispatchEvent(new Event('mouseup')));
-
-  /* ---------- algorithm harness ---------- */
-  function spawnAlgorithm(){
-    const {class:Algo} = ALGORITHMS.find(a=>a.id===algorithmSelect.value);
-    return new Algo(grid, startPos, endPos, cellSize, gridWidth, gridHeight);
-  }
-  const step = ()=>{
-    const {status, nodesVisited} = currentAlgorithm.step();
-    nodesExplored += (nodesVisited || 0);
-    if(status==='found'){
-      // Count PATH cells (excluding start/end)
-      pathLength = grid.flat().filter(v=>v===PATH).length;
-    }
-    updateStatsDisplay();
-    if(status==='found' || status==='no-path'){
-      clearInterval(intervalId);
-      isRunning=false;
-      startBtn.innerHTML='&#9658;';
-      stopElapsedTime();
-    }
-    drawGrid();
-  };
-
-  /* ---------- controls ---------- */
-  // Map slider value (1 = slowest, 10 = fastest) to interval ms
-  function getIntervalFromSlider(val) {
-    // 1 = slowest (400ms), 10 = fastest (0ms/instant)
-    if (val == 10) return 0; // instant
-    // Linear mapping: 1→400ms, 10→0ms
-    return Math.round(400 * (1 - (val-1)/9));
-  }
-
-  function speedLabel(val) {
-    return String(val);
-  }
-
-  speedValue.textContent = speedLabel(+speedSlider.value);
-
-  startBtn.addEventListener('click', () => {
-    if (isRunning) {
-      clearInterval(intervalId);
-      isRunning = false;
-      startBtn.innerHTML = '&#9658;';
-      stopElapsedTime();
+      this.renderer.draw(this.grid);
       return;
     }
-    currentAlgorithm = spawnAlgorithm();
-    currentAlgorithm.init();
-    isRunning = true;
-    startBtn.innerHTML = '&#10073;&#10073;';
-    resetElapsedTime();
-    resetStats(); // Reset counters when starting the algorithm
-    startElapsedTime();
-    intervalId = setInterval(step, getIntervalFromSlider(+speedSlider.value));
-  });
 
-  resetBtn.addEventListener('click', () => {
-    clearInterval(intervalId);
-    isRunning = false;
-    startBtn.innerHTML = '&#9658;';
-    setDefaultPositions();
-    initGrid();
-    drawGrid();
-    resetElapsedTime();
-    resetStats(); // Reset counters when restarting
-  });
+    this.intervalId = setInterval(() => {
+      if (!this.step()) {
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+      }
+    }, interval);
+  }
 
-  speedSlider.addEventListener('input',()=>{
-    speedValue.textContent = speedLabel(+speedSlider.value);
-    if(isRunning){
-      clearInterval(intervalId);
-      intervalId = setInterval(step, getIntervalFromSlider(+speedSlider.value));
+  restartLoop() {
+    if (!this.isRunning) return;
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
     }
-  });
-  algorithmSelect.addEventListener('change', () => {
-    clearInterval(intervalId);
-    isRunning = false;
-    startBtn.innerHTML = '&#9658;';
-    grid.forEach(row => row.forEach((v, i) => {
-      if ([VISITED, FRONTIER, PATH].includes(v)) row[i] = EMPTY;
-    }));
-    drawGrid();
-    resetElapsedTime();
-    resetStats(); // Reset node and path counters
-    updateAlgorithmDesc();
-  });
-  densitySelect.addEventListener('change', () => {
-    const d = DENSITIES[densitySelect.value];
-    gridWidth = d.cols; gridHeight = d.rows;
-    setDefaultPositions();
-    initGrid(); resizeCanvas();
-    resetElapsedTime();
-    resetStats();
-  });
-  mazeBtn.addEventListener('click', () => {
-    clearInterval(intervalId);
-    isRunning = false;
-    if (mazeTypeSelect.value === 'simple') {
-      generateSimpleMaze();
+    this.runLoop();
+  }
+
+  step({ deferDraw = false } = {}) {
+    if (!this.currentAlgorithm) return false;
+    const result = this.currentAlgorithm.step();
+    const nodesVisited = result?.nodesVisited ?? 0;
+    this.nodesExplored += nodesVisited;
+
+    const status = result?.status;
+    if (status === 'found' || status === 'no-path') {
+      if (status === 'found') this.pathLength = this.countPathCells();
+      this.finishRun();
+      if (!deferDraw) this.renderer.draw(this.grid);
+      return false;
+    }
+
+    if (!deferDraw) this.renderer.draw(this.grid);
+    this.updateStatsDisplay();
+    return true;
+  }
+
+  finishRun() {
+    this.stopRun();
+    this.updateStatsDisplay();
+  }
+
+  countPathCells() {
+    let count = 0;
+    for (let y = 0; y < this.grid.height; y += 1) {
+      for (let x = 0; x < this.grid.width; x += 1) {
+        if (this.grid.cells[y][x] === CELL_STATE.PATH) count += 1;
+      }
+    }
+    return count;
+  }
+
+  resetGrid() {
+    this.stopRun();
+    this.grid.setSize(this.currentDensity());
+    this.renderer.resize(this.grid);
+    this.resetStats(true);
+    this.resetTimer();
+  }
+
+  generateMaze() {
+    this.stopRun();
+    if (this.mazeTypeSelect.value === 'simple') {
+      this.grid.generateSimpleMaze();
     } else {
-      generateComplexMaze();
+      this.grid.generateComplexMaze();
     }
-    drawGrid();
-    resetElapsedTime();
-    resetStats();
-  });
+    this.renderer.draw(this.grid);
+    this.resetStats(true);
+    this.resetTimer();
+  }
 
-  densitySelect.innerHTML = `
-    <option value="tiny">12 × 8</option>
-    <option value="small">18 × 12</option>
-    <option value="medium" selected>32 × 20</option>
-    <option value="large">44 × 28</option>
-    <option value="xlarge">60 × 38</option>
-    <option value="extreme">80 × 50</option>
-    <option value="insane">120 × 80</option>
-  `;
+  onAlgorithmChange() {
+    this.stopRun();
+    this.grid.clearWalkStates();
+    const meta = this.getCurrentAlgorithmMeta();
+    this.applyThemeForAlgorithm(meta);
+    this.renderer.draw(this.grid);
+    this.updateAlgorithmDescription(meta);
+    this.resetStats(true);
+    this.resetTimer();
+  }
 
-  /* ---------- boot ---------- */
-  // Grid density
-  const d = DENSITIES[densitySelect.value];
-  gridWidth = d.cols; gridHeight = d.rows;
-  setDefaultPositions();
-  initGrid();
-  renderToolButtons();
-  updateCursor();
-  resizeCanvas();
-  drawGrid();
-  resetStats();
+  onDensityChange() {
+    this.resetGrid();
+  }
 
-  // On boot, show description
-  updateAlgorithmDesc();
+  currentDensity() {
+    const key = this.densitySelect.value;
+    return DENSITIES[key] ?? DENSITIES.medium;
+  }
 
+  getCurrentAlgorithmMeta() {
+    return getAlgorithmMeta(this.algorithmSelect.value);
+  }
+
+  updateAlgorithmDescription(meta = this.getCurrentAlgorithmMeta()) {
+    if (!meta) {
+      this.algorithmDesc.textContent = '';
+      return;
+    }
+    this.algorithmDesc.innerHTML = `
+      <span class="algorithm-desc__title">${meta.name}</span>
+      <span class="algorithm-desc__body">${meta.description}</span>
+    `;
+  }
+
+  updateSpeedLabel() {
+    const interval = this.intervalFromSlider();
+    this.speedValue.textContent = interval === 0 ? 'Instant' : `${interval}ms`;
+  }
+
+  intervalFromSlider() {
+    const slider = this.speedSlider;
+    const rawValue = Number(slider.value);
+    const min = Number(slider.min);
+    const max = Number(slider.max);
+    if (rawValue >= max) return 0;
+
+    const maxDelay = 700;
+    const minDelay = 10;
+    const upperBound = max - 1; // reserve final step for instant mode
+    const clamped = Math.max(min, Math.min(rawValue, upperBound));
+    const span = Math.max(1, upperBound - min);
+    const t = (clamped - min) / span;
+    const eased = 1 - Math.pow(1 - t, 2.2); // ease-out curve for finer fast control
+    const delay = maxDelay - (maxDelay - minDelay) * eased;
+    return Math.max(minDelay, Math.round(delay));
+  }
+
+  resetStats(shouldUpdateLabels = false) {
+    this.nodesExplored = 0;
+    this.pathLength = 0;
+    if (shouldUpdateLabels) this.updateStatsDisplay();
+  }
+
+  updateStatsDisplay() {
+    this.nodesLabel.textContent = `Nodes explored: ${this.nodesExplored}`;
+    this.pathLabel.textContent = `Path length: ${this.pathLength}`;
+  }
+
+  resetTimer() {
+    this.elapsedStart = null;
+    this.elapsedTimeLabel.textContent = '0.00s';
+    if (this.elapsedTimer) {
+      clearInterval(this.elapsedTimer);
+      this.elapsedTimer = null;
+    }
+  }
+
+  applyThemeForAlgorithm(meta = this.getCurrentAlgorithmMeta()) {
+    const theme = meta ? ALGORITHM_THEMES[meta.id] : undefined;
+    this.renderer.applyTheme(theme);
+    this.updateLegendSwatches(theme);
+  }
+
+  updateLegendSwatches(theme = {}) {
+    const palette = { ...BASE_COLORS, ...(theme || {}) };
+    if (this.legendSwatches.start) {
+      this.legendSwatches.start.style.background = palette.start;
+      this.legendSwatches.start.style.boxShadow = 'none';
+    }
+    if (this.legendSwatches.end) {
+      this.legendSwatches.end.style.background = palette.end;
+      this.legendSwatches.end.style.boxShadow = 'none';
+    }
+    if (this.legendSwatches.wall) {
+      this.legendSwatches.wall.style.background = palette.wall;
+      this.legendSwatches.wall.style.boxShadow = 'none';
+    }
+    if (this.legendSwatches.visited) this.legendSwatches.visited.style.background = palette.visited;
+    if (this.legendSwatches.frontier) {
+      this.legendSwatches.frontier.style.background = palette.frontier;
+      this.legendSwatches.frontier.style.boxShadow = `0 0 4px ${palette.frontier}`;
+    }
+    if (this.legendSwatches.path) {
+      this.legendSwatches.path.style.background = palette.path;
+      this.legendSwatches.path.style.boxShadow = `0 0 6px ${palette.path}`;
+    }
+  }
+  startTimer() {
+    this.elapsedStart = performance.now();
+    this.elapsedTimer = setInterval(() => {
+      if (!this.elapsedStart) return;
+      const elapsed = (performance.now() - this.elapsedStart) / 1000;
+      this.elapsedTimeLabel.textContent = `${elapsed.toFixed(2)}s`;
+    }, 50);
+  }
+
+  stopTimer() {
+    if (this.elapsedTimer) {
+      clearInterval(this.elapsedTimer);
+      this.elapsedTimer = null;
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const app = new PathfindingApp(document);
+  app.init();
   console.info('%cPathfinding visualizer ready', 'color:#4f8cff');
 });

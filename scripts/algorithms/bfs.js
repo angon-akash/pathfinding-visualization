@@ -1,4 +1,3 @@
-// scripts/algorithms/bfs.js
 import { neighbors, key, paint, reconstructPath, resetGridState, SimpleQueue } from './utils.js';
 
 export class BFSAlgorithm {

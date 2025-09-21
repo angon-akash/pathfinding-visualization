@@ -1,0 +1,8 @@
+{
+  "name": "pathfinding-visualization",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/priorityQueue.test.js"
+  }
+}

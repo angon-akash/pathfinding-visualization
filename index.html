@@ -17,8 +17,7 @@
   <main>
     <!-- GRID CONTAINER with CONTROLS INSIDE -->
     <section class="section grid-container">
-      <!-- CONTROLS -->
-      <div class="controls-bar redesigned-controls" style="gap:0.8rem; margin-bottom: 2.2rem;">
+      <div class="controls-bar redesigned-controls">
         <div class="controls-row controls-stack">
           <div class="controls-group">
             <label for="algorithmSelect">Algorithm</label>
@@ -26,63 +25,57 @@
           </div>
           <div class="controls-group">
             <label for="densitySelect">Grid Size</label>
-            <select id="densitySelect">
-              <option value="tiny">12 × 8</option>
-              <option value="small">18 × 12</option>
-              <option value="medium" selected>32 × 20</option>
-              <option value="large">44 × 28</option>
-              <option value="xlarge">60 × 38</option>
-              <option value="extreme">80 × 50</option>
-              <option value="insane">120 × 80</option>
-            </select>
+            <select id="densitySelect"></select>
           </div>
-          <div class="controls-group">
+          <div class="controls-group controls-group--maze">
             <label for="mazeTypeSelect">Maze</label>
-            <select id="mazeTypeSelect" style="min-width:110px;">
+            <select id="mazeTypeSelect">
               <option value="simple">Simple</option>
               <option value="complex">Complex</option>
             </select>
             <button id="mazeButton" title="Generate Maze" aria-label="Generate Maze">Generate</button>
           </div>
-          <div class="controls-group">
+          <div class="controls-group controls-group--speed">
             <label for="speedSlider">Speed</label>
-            <input type="range" id="speedSlider" min="1" max="10" step="1" value="5" style="width:90px;">
-            <span id="speedValue" style="min-width:28px;display:inline-block;">5</span>
-            <span style="margin:0 0.5em;">-</span>
-            <label id="elapsedTimeLabel" for="elapsedTime" style="margin:0;">Elapsed</label>
-            <span id="elapsedTime" style="min-width:54px;display:inline-block;">0.00s</span>
+            <input type="range" id="speedSlider" min="1" max="30" step="1" value="18">
+            <span id="speedValue" class="speed-value">5</span>
+            <span class="controls-separator">-</span>
+            <label id="elapsedTimeLabel" for="elapsedTime">Elapsed</label>
+            <span id="elapsedTime" class="elapsed-time">0.00s</span>
           </div>
           <div class="controls-group run-controls">
-            <label for="startButton" style="margin-right:0.4em;">Run</label>
-            <button id="startButton" title="Start / Pause" aria-label="Start algorithm">&#9658;</button>
-            <button id="resetButton" class="danger" title="Reset grid" aria-label="Reset grid">&#8635;</button>
+            <label for="startButton">Run</label>
+            <button id="startButton" title="Start / Pause" aria-label="Start algorithm">▶</button>
+            <button id="resetButton" class="danger" title="Reset grid" aria-label="Reset grid">↻</button>
           </div>
         </div>
-        <div class="controls-row tool-btns-row" style="margin-top:0.7em;">
+        <div class="controls-row tool-btns-row">
           <div class="controls-group tool-btns" id="toolBtns" aria-label="Grid Tools"></div>
         </div>
       </div>
-      <!-- Add margin-top to the grid for spacing -->
-      <canvas id="grid" width="616" height="392" tabindex="0" aria-label="Interactive pathfinding grid" style="display:block;margin:0 auto 1.5rem auto;"></canvas>
+
+      <canvas id="grid" width="896" height="560" tabindex="0" aria-label="Interactive pathfinding grid"></canvas>
+
       <div class="legend" aria-hidden="true">
-        <div class="legend-item"><span class="legend-swatch swatch-start"></span>Start</div>
-        <div class="legend-item"><span class="legend-swatch swatch-end"></span>End</div>
-        <div class="legend-item"><span class="legend-swatch swatch-wall"></span>Wall</div>
-        <div class="legend-item"><span class="legend-swatch swatch-visited"></span>Visited</div>
-        <div class="legend-item"><span class="legend-swatch swatch-frontier"></span>Frontier</div>
-        <div class="legend-item"><span class="legend-swatch swatch-path"></span>Path</div>
+        <div class="legend-item"><span class="legend-swatch swatch-start" data-swatch="start"></span>Start</div>
+        <div class="legend-item"><span class="legend-swatch swatch-end" data-swatch="end"></span>End</div>
+        <div class="legend-item"><span class="legend-swatch swatch-wall" data-swatch="wall"></span>Wall</div>
+        <div class="legend-item"><span class="legend-swatch swatch-visited" data-swatch="visited"></span>Visited</div>
+        <div class="legend-item"><span class="legend-swatch swatch-frontier" data-swatch="frontier"></span>Frontier</div>
+        <div class="legend-item"><span class="legend-swatch swatch-path" data-swatch="path"></span>Path</div>
       </div>
-      <div id="gridStats" style="text-align:center;margin:1.1em 0 0.5em 0;color:var(--muted);font-size:1.08em;">
+      <div id="algorithmDesc" class="algorithm-desc"></div>
+      <div id="gridStats" class="grid-stats">
         <span id="nodesExplored">Nodes explored: 0</span>
-        &nbsp;|&nbsp;
+        <span class="grid-stats__separator">|</span>
         <span id="pathLength">Path length: 0</span>
       </div>
     </section>
 
     <!-- HOW-TO -->
     <section class="section">
-      <h2 style="margin-top:0;">How to use</h2>
-      <ol style="margin:0 0 0 1.2em;padding:0 0 0 0.2em;line-height:1.7;">
+      <h2>How to use</h2>
+      <ol class="howto-list">
         <li>
           <strong>Select a tool</strong> (Wall, Start, End, Erase) and <strong>click or drag</strong> on the grid to edit cells.
         </li>
@@ -106,7 +99,7 @@
 
     <!-- ABOUT -->
     <section class="section">
-      <h2 style="margin-top:0;">Algorithms</h2>
+      <h2>Algorithms</h2>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;margin-top:.7em;">
           <thead>
@@ -176,4 +169,3 @@
   <script type="module" src="scripts/main.js"></script>
 </body>
 </html>
-
